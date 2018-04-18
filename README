@@ -1,0 +1,5 @@
+To compile use:
+  g++ -std=c++11 my_aes.c++ -o my_aes
+
+To run:
+  ./my_aes

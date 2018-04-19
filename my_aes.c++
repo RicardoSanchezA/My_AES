@@ -142,15 +142,20 @@ void MyAES::GenerateKeys() {
   }
 
   // Fill in the first 176 bytes
-  for(int processed_bytes = n, it = 1; processed_bytes < 176; processed_bytes += 4) {
+  for(int processed_bytes = n, it = 1; processed_bytes < b; processed_bytes += 4) {
     // Assign the value of previous 4 bytes to 'temp'
     for(int i = 0; i < 4; ++i) {
       temp[i] = expanded_keys[processed_bytes + i - 4];
     }
 
-    if (processed_bytes % 16 == 0) {
+    if (processed_bytes % n == 0) {
       GenerateKeyCore(temp, it);
       ++it;
+    }
+
+    if (key_size == 256 && processed_bytes % n == (n << 2)) {
+      for(int i = 0; i < 4; ++i)
+        temp[i] = s[temp[i]];
     }
     
     for(int i = 0; i < 4; ++i) {

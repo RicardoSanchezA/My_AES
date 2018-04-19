@@ -1,4 +1,7 @@
-  #include "my_aes.h"
+#include <iostream>
+
+#include "my_aes.h"
+#include "lookup_tables.h"
 
 // MyAES Constructors
 MyAES::MyAES() : data(),
@@ -39,7 +42,6 @@ void MyAES::FillData() {
       row = 0;
       ++col;
     }
-    std::cout << c;
   }
 }
 void MyAES::SubBytes() {
@@ -91,22 +93,28 @@ void MyAES::MixColumns() {
 void MyAES::GenerateKeys() {
 
 }
+void MyAES::PrintData() {
+  for(int i = 0; i < 4; ++i) {
+    for(int j = 0; j < 4; ++j) {
+      printf("%02x ", data[i][j]);
+    }
+    std::cout << "\n";
+  }
+  std::cout << "\n";
+}
 
 // Public Methods
 void MyAES::Encrypt() {
+  std::cout << "Fill 4x4 Array:\n";
   FillData();
+  PrintData();
+  std::cout << "SubBytes:\n";
   SubBytes();
+  PrintData();
+  std::cout << "ShiftRows:\n";
   ShiftRows();
+  PrintData();
+  std::cout << "MixColumns:\n";
   MixColumns();
-}
-
-
-
-int main(int argc, char** argv) {
-
-  MyAES my_aes(128, "key.txt", "input.txt", "output.txt");
-
-  my_aes.Encrypt();
-
-  return 0;
+  PrintData();
 }

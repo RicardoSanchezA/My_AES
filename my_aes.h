@@ -1,17 +1,10 @@
 #ifndef MY_AES_H
 #define MY_AES_H
 
-#include <iostream>
 #include <fstream>
-#include <string>
 #include <vector>
 
-#include "lookup_tables.h"
-
 typedef uint8_t byte;
-
-int galois_matrix[4][4] = {{2,3,1,1}, {1,2,3,1}, {1,1,2,3}, {3,1,1,2}};
-int inverse_galois_matrix[4][4] = {{14,11,13,9},{9,14,11,13},{13,9,14,11},{11,13,9,14}};
 
 class MyAES {
   // Private Data
@@ -29,6 +22,8 @@ class MyAES {
   void ShiftRows();
   void MixColumns();
   void GenerateKeys();
+
+  void PrintData();
 
 
 public:

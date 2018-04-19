@@ -5,7 +5,10 @@
 
 // MyAES Constructors
 MyAES::MyAES() : data(),
-             key_size(), 
+             key_size(),
+             padding(0),
+             n(),
+             b(), 
              key_file(), 
              in_file(), 
              out_file() {}
@@ -15,6 +18,9 @@ MyAES::MyAES(const int& _key_size,
              const std::string& _output_file) : 
              data(),
              key_size(_key_size), 
+             padding(0),
+             n(key_size == 128 ? 16 : 32),
+             b(key_size == 128 ? 176 : 240),
              key_file(), 
              in_file(), 
              out_file() {
@@ -105,6 +111,7 @@ void MyAES::PrintData() {
 
 // Public Methods
 void MyAES::Encrypt() {
+  std::cout << "key_size: " << key_size << ", n: " << n << ", b: " << b << "\n";
   std::cout << "Fill 4x4 Array:\n";
   FillData();
   PrintData();

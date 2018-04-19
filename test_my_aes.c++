@@ -1,8 +1,5 @@
-#include<iostream>
+#include <iostream>
 #include <string>
-#include<stdio.h>
-#include<ctype.h>
-#include<stdlib.h>
 #include <getopt.h>
 
 #include "my_aes.h"
@@ -39,9 +36,9 @@ int main(int argc, char **argv)
       case 'o': output_file = optarg; break;
       case 'e': ecb_mode = true; break;
       case 'h':
-      case '?': fprintf(stderr, "usuage is \n -k, --keysize <keysize> \n -f, 
-        --keyfile <key file> \n -i, --inputfile <input file> \n -o, 
-        --outputfile <output file> \n -e, --ecb to enable ECB mode \n 
+      case '?': fprintf(stderr, "usuage is \n -k, --keysize <keysize> \n -f,\
+        --keyfile <key file> \n -i, --inputfile <input file> \n -o, \
+        --outputfile <output file> \n -e, --ecb to enable ECB mode \n \
         -h, --help to print this message \n");
       default: cout<<endl; abort();
     }

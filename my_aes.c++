@@ -21,8 +21,8 @@ MyAES::MyAES(const int& _key_size,
              expanded_keys(),
              key_size(_key_size), 
              padding(0),
-             n(key_size == 128 ? 16 : 32),
-             b(key_size == 128 ? 176 : 240),
+             n(key_size == 256 ? 32 : 16),
+             b(key_size == 256 ? 240 : 176),
              key_file(), 
              in_file(), 
              out_file() {
@@ -98,7 +98,7 @@ void MyAES::MixColumns() {
     }
   }
 }
-void MyAES::GenerateKeyCore(byte* in, int i) {
+void MyAES::GenerateKeyCore(byte in[], int i) {
   ShiftLeft(in);
   for(int a = 0; a < 4; ++a)
     in[a] = s[in[a]];
@@ -134,6 +134,7 @@ void MyAES::Encrypt() {
   printf("\n");
 }
 void MyAES::GenerateKeys() {
+  int unit = 4;
   byte temp[4];
   byte x;
   // Read first 'n' bytes from the original key
@@ -148,16 +149,21 @@ void MyAES::GenerateKeys() {
       temp[i] = expanded_keys[processed_bytes + i - 4];
     }
 
+    // Every 'n' bytes (size of expanded key) we want to
+    // re-generate the core part of the next expanded key.
     if (processed_bytes % n == 0) {
       GenerateKeyCore(temp, it);
       ++it;
     }
 
-    if (key_size == 256 && processed_bytes % n == (n << 2)) {
+    // We need to use the s-table for 256-bit keys to make a substitution.
+    if (key_size == 256 && processed_bytes % n == (n >> 1)) {
+      printf("Key 256!\n");
       for(int i = 0; i < 4; ++i)
         temp[i] = s[temp[i]];
     }
     
+    // Last Setp: XOR and store the 4-bytes worth of expanded keys that we generated so far. 
     for(int i = 0; i < 4; ++i) {
       expanded_keys[processed_bytes + i] = temp[i] ^ expanded_keys[processed_bytes + i - n];
     }

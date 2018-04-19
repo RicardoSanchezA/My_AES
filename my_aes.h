@@ -20,7 +20,7 @@ class MyAES {
   // Private Methods
   void FillData();
   void SubBytes();
-  void Rotate(byte *in);
+  void ShiftLeft(byte *in);
   void ShiftRows();
   void MixColumns();
   void GenerateKeyCore(byte* in, int i);

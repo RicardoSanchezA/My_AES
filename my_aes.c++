@@ -60,7 +60,7 @@ void MyAES::SubBytes() {
     }
   }
 }
-void MyAES::Rotate(byte* row) {
+void MyAES::ShiftLeft(byte* row) {
   byte temp = row[0];
   for(int i = 0; i < 3; ++i)
     row[i] = row[i + 1];
@@ -69,7 +69,7 @@ void MyAES::Rotate(byte* row) {
 void MyAES::ShiftRows() {
   for(int i = 1; i <= 3; ++i) {
     for(int j = 1; j <= i; ++j) {
-      Rotate(data[i]);
+      ShiftLeft(data[i]);
     }
   }
 }
@@ -98,16 +98,8 @@ void MyAES::MixColumns() {
     }
   }
 }
-/*void MyAES::Rotate(byte *in) {
-        byte a;
-        a = in[0];
-        for(int c=0; c < 3; ++c) 
-                in[c] = in[c + 1];
-        in[3] = a;
-        return;
-}*/
 void MyAES::GenerateKeyCore(byte* in, int i) {
-  Rotate(in);
+  ShiftLeft(in);
   for(int a = 0; a < 4; ++a)
     in[a] = s[in[a]];
 
@@ -150,21 +142,19 @@ void MyAES::GenerateKeys() {
   }
 
   // Fill in the first 176 bytes
-  for(int processed_bytes = n, it = 1; processed_bytes < 176; ) {
+  for(int processed_bytes = n, it = 1; processed_bytes < 176; processed_bytes += 4) {
     // Assign the value of previous 4 bytes to 'temp'
     for(int i = 0; i < 4; ++i) {
       temp[i] = expanded_keys[processed_bytes + i - 4];
     }
 
-    // We only use the core if it's the first iteration
-    if (processed_bytes % 16) {
+    if (processed_bytes % 16 == 0) {
       GenerateKeyCore(temp, it);
       ++it;
     }
     
     for(int i = 0; i < 4; ++i) {
-      expanded_keys[processed_bytes] = temp[i] ^ expanded_keys[processed_bytes - n];
-      ++processed_bytes;
+      expanded_keys[processed_bytes + i] = temp[i] ^ expanded_keys[processed_bytes + i - n];
     }
   }
 

@@ -8,8 +8,6 @@ MyAES::MyAES() : data(),
 	           expanded_keys(),
              key_size(),
              padding(0),
-             n(),
-             b(), 
              key_file(), 
              in_file(), 
              out_file() {}
@@ -21,15 +19,13 @@ MyAES::MyAES(const int& _key_size,
              expanded_keys(),
              key_size(_key_size), 
              padding(0),
-             n(key_size == 256 ? 32 : 16),
-             b(key_size == 256 ? 240 : 176),
              key_file(), 
              in_file(), 
              out_file() {
                key_file.open(_key_file);
                in_file.open(_input_file);
                out_file.open(_output_file);
-               expanded_keys = std::vector<byte>(b);
+               expanded_keys = std::vector<byte>(key_size == 256 ? 240 : 176);
              }
 // MyAES Destructor
 MyAES::~MyAES() {
@@ -117,7 +113,6 @@ void MyAES::PrintData() {
 
 // Public Methods
 void MyAES::Encrypt() {
-  std::cout << "key_size: " << key_size << ", n: " << n << ", b: " << b << "\n";
   std::cout << "Fill 4x4 Array:\n";
   FillData();
   PrintData();
@@ -134,7 +129,8 @@ void MyAES::Encrypt() {
   printf("\n");
 }
 void MyAES::GenerateKeys() {
-  int unit = 4;
+  int n = (key_size == 256 ? 32 : 16);
+  int b = (key_size == 256 ? 240 : 176);
   byte temp[4];
   byte x;
   // Read first 'n' bytes from the original key
@@ -158,7 +154,6 @@ void MyAES::GenerateKeys() {
 
     // We need to use the s-table for 256-bit keys to make a substitution.
     if (key_size == 256 && processed_bytes % n == (n >> 1)) {
-      printf("Key 256!\n");
       for(int i = 0; i < 4; ++i)
         temp[i] = s[temp[i]];
     }

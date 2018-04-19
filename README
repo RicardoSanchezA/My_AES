@@ -1,5 +1,5 @@
 To compile use:
-  g++ -std=c++11 my_aes.c++ -o my_aes
+  g++ -std=c++11 test_my_aes.c++ my_aes.c++ -o test_my_aes
 
 To run:
-  ./my_aes
+  ./test_my_aes

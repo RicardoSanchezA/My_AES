@@ -20,10 +20,11 @@ class MyAES {
   // Private Methods
   void FillData();
   void SubBytes();
-  void ShiftRow(const int& row);
+  void Rotate(byte *in);
+  void ShiftRowLeft(const int& row);
   void ShiftRows();
   void MixColumns();
-  void GenerateKeys();
+  void GenerateKeyCore(byte* in, int i);
 
   void PrintData();
 
@@ -39,6 +40,7 @@ public:
   ~MyAES();
   // Public Methods
   void Encrypt();
+  void GenerateKeys();
 };
 
 #endif

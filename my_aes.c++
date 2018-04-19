@@ -77,27 +77,30 @@ void MyAES::ShiftRows() {
   }
 }
 void MyAES::MixColumns() {
-  byte temp[4][4];
+  byte temp[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
 
-  temp[0][0] = two[data[0][0]] ^ three[data[1][0]] ^ data[2][0] ^ data[3][0];
-  temp[1][0] = data[0][0] ^ two[data[1][0]] ^ three[data[2][0]] ^ data[3][0];
-  temp[2][0] = data[0][0] ^ data[1][0] ^ two[data[2][0]] ^ three[data[3][0]];
-  temp[3][0] = three[data[0][0]] ^ data[1][0] ^ data[2][0] ^ two[data[3][0]];
-
-  temp[0][1] = two[data[0][1]] ^ three[data[1][1]] ^ data[2][1] ^ data[3][1];
-  temp[1][1] = data[0][1] ^ two[data[1][1]] ^ three[data[2][1]] ^ data[3][1];
-  temp[2][1] = data[0][1] ^ data[1][1] ^ two[data[2][1]] ^ three[data[3][1]];
-  temp[3][1] = three[data[0][1]] ^ data[1][1] ^ data[2][1] ^ two[data[3][1]];
-
-  temp[0][2] = two[data[0][2]] ^ three[data[1][2]] ^ data[2][2] ^ data[3][2];
-  temp[1][2] = data[0][2] ^ two[data[1][2]] ^ three[data[2][2]] ^ data[3][2];
-  temp[2][2] = data[0][2] ^ data[1][2] ^ two[data[2][2]] ^ three[data[3][2]];
-  temp[3][2] = three[data[0][2]] ^ data[1][2] ^ data[2][2] ^ two[data[3][2]];
-
-  temp[0][3] = two[data[0][3]] ^ three[data[1][3]] ^ data[2][3] ^ data[3][3];
-  temp[1][3] = data[0][3] ^ two[data[1][3]] ^ three[data[2][3]] ^ data[3][3];
-  temp[2][3] = data[0][3] ^ data[1][3] ^ two[data[2][3]] ^ three[data[3][3]];
-  temp[3][3] = three[data[0][3]] ^ data[1][3] ^ data[2][3] ^ two[data[3][3]];
+  for(int i = 0; i < 4; ++i) {
+    for(int j = 0; j < 4; ++j) {
+      for(int k = 0; k < 4; ++k) {
+        int a = galois_matrix[j][k];
+        byte b = data[k][i];
+        if (a == 1)
+          temp[j][i] ^= b;
+        if (a == 2)
+          temp[j][i] ^= two[b];
+        if (a == 3)
+          temp[j][i] ^= three[b];
+        if (a == 9)
+          temp[j][i] ^= nine[b];
+        if (a == 11)
+          temp[j][i] ^= eleven[b];
+        if (a == 13)
+          temp[j][i] ^= thirteen[b];
+        if (a == 14)
+          temp[j][i] ^= fourteen[b];
+      }
+    }
+  }
 
   for(int i = 0; i < 4; ++i) {
     for(int j = 0; j < 4; ++j) {
@@ -129,13 +132,14 @@ void MyAES::PrintData() {
   std::cout << "\n";
 }
 void MyAES::StoreData() {
+  std::cout << "ciphertext: ";
   for(int i = 0, k = 0; i < 4; ++i) {
     for(int j = 0; j < 4 && k < data_size; ++j, ++k) {
-      out_file << data[i][j];
-      printf("%02x [%d,%d]", data[i][j], k, data_size);
+      out_file << data[j][i];
+      printf("%02x ", data[j][i]);
     }
-    std::cout << "\n";
   }
+  std::cout << "\n";
 }
 
 // Public Methods
@@ -164,10 +168,9 @@ void MyAES::Encrypt() {
     std::cout << "AddRoundKey:\n";
     AddRoundKey(round);
     PrintData();
-    std::cout << "\n";
   }
 
-  PrintData();
+  std::cout << "Round #" << round << "\n";
   std::cout << "SubBytes:\n";
   SubBytes();
   PrintData();

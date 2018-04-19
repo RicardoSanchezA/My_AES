@@ -21,7 +21,6 @@ class MyAES {
   void FillData();
   void SubBytes();
   void Rotate(byte *in);
-  void ShiftRowLeft(const int& row);
   void ShiftRows();
   void MixColumns();
   void GenerateKeyCore(byte* in, int i);

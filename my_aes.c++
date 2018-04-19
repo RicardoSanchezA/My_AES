@@ -60,17 +60,16 @@ void MyAES::SubBytes() {
     }
   }
 }
-void MyAES::ShiftRowLeft(const int& row) {
-  byte temp = data[row][0];
-  data[row][0] = data[row][1];
-  data[row][1] = data[row][2];
-  data[row][2] = data[row][3];
-  data[row][3] = temp;
+void MyAES::Rotate(byte* row) {
+  byte temp = row[0];
+  for(int i = 0; i < 3; ++i)
+    row[i] = row[i + 1];
+  row[3] = temp;
 }
 void MyAES::ShiftRows() {
   for(int i = 1; i <= 3; ++i) {
     for(int j = 1; j <= i; ++j) {
-      ShiftRowLeft(i);
+      Rotate(data[i]);
     }
   }
 }
@@ -99,14 +98,14 @@ void MyAES::MixColumns() {
     }
   }
 }
-void MyAES::Rotate(byte *in) {
+/*void MyAES::Rotate(byte *in) {
         byte a;
         a = in[0];
-        for(int c=0;c<3;c++) 
+        for(int c=0; c < 3; ++c) 
                 in[c] = in[c + 1];
         in[3] = a;
         return;
-}
+}*/
 void MyAES::GenerateKeyCore(byte* in, int i) {
   Rotate(in);
   for(int a = 0; a < 4; ++a)
@@ -151,7 +150,7 @@ void MyAES::GenerateKeys() {
   }
 
   // Fill in the first 176 bytes
-  for(int processed_bytes = n, it = 1; processed_bytes < 176; processed_bytes += 4) {
+  for(int processed_bytes = n, it = 1; processed_bytes < 176; ) {
     // Assign the value of previous 4 bytes to 'temp'
     for(int i = 0; i < 4; ++i) {
       temp[i] = expanded_keys[processed_bytes + i - 4];
@@ -164,10 +163,12 @@ void MyAES::GenerateKeys() {
     }
     
     for(int i = 0; i < 4; ++i) {
-      expanded_keys[processed_bytes + i] = temp[i] ^ expanded_keys[processed_bytes + i - n];
+      expanded_keys[processed_bytes] = temp[i] ^ expanded_keys[processed_bytes - n];
+      ++processed_bytes;
     }
   }
 
+  // Print for debugging
   int counter = 1;
   for(auto x : expanded_keys) {
     printf("%02x ", x);

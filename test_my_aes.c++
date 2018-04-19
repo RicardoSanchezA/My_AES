@@ -6,16 +6,9 @@
 
 using namespace std;
 
-
-int main(int argc, char **argv)
-{
-  // Initialize parameters with default values
-  short key_size = 128;
-  string key_file = "key.txt", input_file = "input.txt",
-    output_file = "output.txt";
-  bool ecb_mode = false;
-
-  // Replace parameters with options sent to program
+static void GetOptions(const int& argc, char* argv[], short& key_size, 
+                       string& key_file, string& input_file, 
+                       string& output_file, bool& ecb_mode) {
   const char* short_options = "k:f:i:o:eh";
   const struct option long_options[] = {
     {"keysize", required_argument, 0, 'k'},
@@ -30,7 +23,9 @@ int main(int argc, char **argv)
   while ((opt = getopt_long(argc, argv, short_options, long_options, nullptr)) 
           != -1) {
     switch(opt) {
-      case 'k': key_size = std::stoi(optarg); break;
+      case 'k': if(std::stoi(optarg) == 256)
+                  key_size = 256; 
+                break;
       case 'f': key_file = optarg; break;
       case 'i': input_file = optarg; break;
       case 'o': output_file = optarg; break;
@@ -40,9 +35,22 @@ int main(int argc, char **argv)
         --keyfile <key file> \n -i, --inputfile <input file> \n -o, \
         --outputfile <output file> \n -e, --ecb to enable ECB mode \n \
         -h, --help to print this message \n");
-      default: cout<<endl; abort();
+      default: cout<<"\n"; abort();
     }
   }
+}
+
+
+int main(const int argc, char* argv[])
+{
+  // Initialize parameters with default values
+  short key_size = 128;
+  string key_file = "key.txt", input_file = "input.txt",
+    output_file = "output.txt";
+  bool ecb_mode = false;
+
+  // Replace parameters with options sent to program
+  GetOptions(argc, argv, key_size, key_file, input_file, output_file, ecb_mode);
 
   // Initialize AES instance with provided parameters
   MyAES my_aes(key_size, key_file, input_file, output_file);

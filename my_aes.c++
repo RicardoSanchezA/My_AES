@@ -7,7 +7,7 @@
 MyAES::MyAES() : data(),
 	           expanded_keys(),
              key_size(),
-             padding(0),
+             pad_size(0),
              key_file(), 
              in_file(), 
              out_file() {}
@@ -18,7 +18,7 @@ MyAES::MyAES(const int& _key_size,
              data(),
              expanded_keys(),
              key_size(_key_size), 
-             padding(0),
+             pad_size(0),
              key_file(), 
              in_file(), 
              out_file() {
@@ -38,11 +38,11 @@ MyAES::~MyAES() {
 void MyAES::FillData() {
   char c;
   int row, col;
-  row = col = padding = 0;
-  while (in_file >> c && padding < 16) {
+  row = col = pad_size = 0;
+  while (in_file >> c && pad_size < 16) {
     data[row][col] = c;
     ++row;
-    ++padding;
+    ++pad_size;
     if (row == 4) {
       row = 0;
       ++col;
@@ -132,21 +132,23 @@ void MyAES::GenerateKeys() {
   int n = (key_size == 256 ? 32 : 16);
   int b = (key_size == 256 ? 240 : 176);
   byte temp[4];
-  byte x;
-  // Read first 'n' bytes from the original key
-  for(int i = 0; i < n && key_file >> x; ++i) {
-    expanded_keys[i] = x;
+  // Get first 'n' bytes from the original key
+  {
+    byte x;
+    for(int i = 0; i < n && key_file >> x; ++i) {
+      expanded_keys[i] = x;
+    }
   }
 
-  // Fill in the first 176 bytes
+  // Fill in the remaining bytes
   for(int processed_bytes = n, it = 1; processed_bytes < b; processed_bytes += 4) {
     // Assign the value of previous 4 bytes to 'temp'
     for(int i = 0; i < 4; ++i) {
       temp[i] = expanded_keys[processed_bytes + i - 4];
     }
 
-    // Every 'n' bytes (size of expanded key) we want to
-    // re-generate the core part of the next expanded key.
+    // Every 'n' bytes (size of each expanded key) we want to
+    // re-generate the core part for the next expanded key.
     if (processed_bytes % n == 0) {
       GenerateKeyCore(temp, it);
       ++it;
@@ -158,7 +160,7 @@ void MyAES::GenerateKeys() {
         temp[i] = s[temp[i]];
     }
     
-    // Last Setp: XOR and store the 4-bytes worth of expanded keys that we generated so far. 
+    // Last Setp: XOR with bytes that are 'n' bytes behind in 'expended_keys'. 
     for(int i = 0; i < 4; ++i) {
       expanded_keys[processed_bytes + i] = temp[i] ^ expanded_keys[processed_bytes + i - n];
     }

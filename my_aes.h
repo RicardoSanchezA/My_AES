@@ -11,7 +11,7 @@ class MyAES {
   byte data[4][4];
   std::vector<byte> expanded_keys;
   int key_size;
-  int padding;
+  int pad_size;
   std::ifstream key_file;
   std::ifstream out_file;
   std::ifstream in_file;

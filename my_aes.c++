@@ -23,11 +23,11 @@ MyAES::MyAES(const int& _key_size,
              key_file(), 
              in_file(), 
              out_file() {
-               key_file.open(_key_file);
-               in_file.open(_input_file);
-               out_file.open(_output_file);
-               expanded_keys = std::vector<byte>(key_size == 256 ? 240 : 176);
-             }
+  key_file.open(_key_file);
+  in_file.open(_input_file);
+  out_file.open(_output_file);
+  expanded_keys = std::vector<byte>(key_size == 128 ? 176 : 240);
+}
 // MyAES Destructor
 MyAES::~MyAES() {
   key_file.close();

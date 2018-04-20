@@ -1,5 +1,8 @@
 To compile use:
   g++ -std=c++11 test_my_aes.c++ my_aes.c++ -o test_my_aes
 
-To run:
-  ./test_my_aes
+To use the program:
+  (Encryption)
+    ./test_my_aes -k key.txt -i input.txt -o output.txt
+  (Decryption)
+    ./test_my_aes -k key.txt -i output.txt -o a.txt -m decrypt

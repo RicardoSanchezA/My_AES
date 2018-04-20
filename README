@@ -6,3 +6,5 @@ To use the program:
     ./test_my_aes -k key.txt -i input.txt -o output.txt
   (Decryption)
     ./test_my_aes -k key.txt -i output.txt -o a.txt -m decrypt
+  (Print Help Menu)
+    ./test_my_aes -h

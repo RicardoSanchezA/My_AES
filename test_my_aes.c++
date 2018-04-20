@@ -10,10 +10,13 @@ static void GetOptions(const int& argc, char* argv[], short& key_size,
                        string& key_file, string& input_file,
                        string& output_file, bool& encrypt_mode,
                        bool& ecb_mode) {
-  const char* help_menu = "Program options are: \n -s, --keysize: \
-<keysize> \n -k, --keyfile: <key file> \n -i, --inputfile: <input file> \n -o,\
- --outputfile: <output file> \n -m, --mode: <encrypty/decrypt> \n \
--c, --cbc: to enable CBC mode \n -h, --help: to print this message \n";
+  const char* help_menu = "Program options are: \n -s, --keysize \
+<key size> \n -k, --keyfile <key file> \n -i, --inputfile <input file> \n -o,\
+ --outputfile <output file> \n -m, --mode [encrypt/decrypt] \
+\n -c, --cbc (enable CBC mode) \n -h, --help (print this message) \n\
+Default values are: \n keysize: 128-bits\n keyfile: \'key.txt\'\n \
+inputfile: \'input.txt\'\n outputfile: \'output.txt\'\n mode: encrypt\n \
+cbc: disabled\n";
   const char* short_options = "s:k:i:o:m:ch";
   const struct option long_options[] = {
     {"keysize", required_argument, 0, 's'},

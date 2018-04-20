@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "my_aes.h"
 #include "lookup_tables.h"
 
@@ -8,27 +6,29 @@ MyAES::MyAES() : data(),
              expanded_keys(),
              key_size(),
              data_size(16),
-             key_file(), 
-             in_file(), 
+             key_file(),
+             in_file(),
              out_file() {}
 MyAES::MyAES(const int& _key_size,
              const std::string& _key_file,
              const std::string& _input_file,
-             const std::string& _output_file) : 
+             const std::string& _output_file) :
              data(),
              expanded_keys(),
-             key_size(_key_size), 
+             key_size(_key_size),
              data_size(16),
-             key_file(), 
-             in_file(), 
+             key_file(),
+             in_file(),
              out_file() {
+  // Open all required files
   key_file.open(_key_file);
   in_file.open(_input_file);
   out_file.open(_output_file);
+  // Initialize vector where we'll store expanded keys
   expanded_keys = std::vector<byte>(key_size == 128 ? 176 : 240);
 }
 
-// Helper Methods
+// Pricate/Helper Methods
 void MyAES::CheckPad() {
   int row, col;
   row = col = 3;
@@ -46,7 +46,6 @@ void MyAES::FillData() {
   char c;
   int row, col;
   row = col = data_size = 0;
-
   // Read data from input file (one char/byte at a time)
   while (data_size < 16 && in_file.get(c)) {
     data[row][col] = c;
@@ -112,12 +111,9 @@ void MyAES::MixColumns() {
       for (int k = 0; k < 4; ++k) {
         int a = galois_matrix[j][k];
         byte b = data[k][i];
-        if (a == 1)
-          temp[j][i] ^= b;
-        if (a == 2)
-          temp[j][i] ^= two[b];
-        if (a == 3)
-          temp[j][i] ^= three[b];
+        if (a == 1) temp[j][i] ^= b;
+        if (a == 2) temp[j][i] ^= two[b];
+        if (a == 3) temp[j][i] ^= three[b];
       }
     }
   }
@@ -134,14 +130,10 @@ void MyAES::InvMixColumns() {
       for (int k = 0; k < 4; ++k) {
         int a = inv_galois_matrix[j][k];
         byte b = data[k][i];
-        if (a == 9)
-          temp[j][i] ^= nine[b];
-        if (a == 11)
-          temp[j][i] ^= eleven[b];
-        if (a == 13)
-          temp[j][i] ^= thirteen[b];
-        if (a == 14)
-          temp[j][i] ^= fourteen[b];
+        if (a == 9) temp[j][i] ^= nine[b];
+        if (a == 11) temp[j][i] ^= eleven[b];
+        if (a == 13) temp[j][i] ^= thirteen[b];
+        if (a == 14) temp[j][i] ^= fourteen[b];
       }
     }
   }
@@ -153,9 +145,9 @@ void MyAES::InvMixColumns() {
 }
 void MyAES::GenerateKeyHelper(byte in[], int i) {
   ShiftLeft(in);
-  for (int a = 0; a < 4; ++a)
+  for (int a = 0; a < 4; ++a) {
     in[a] = s[in[a]];
-
+  }
   in[0] ^= rcon[i];
 }
 void MyAES::AddRoundKey(const int& round) {
@@ -169,9 +161,7 @@ void MyAES::StoreData() {
   CheckPad();
   for (int i = 0, k = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j, ++k) {
-      if (k < data_size - pad_size) {
-        out_file << data[j][i];
-      }
+      if (k < data_size - pad_size) out_file << data[j][i];
     }
   }
 }
@@ -179,38 +169,34 @@ void MyAES::StoreData() {
 // Public Methods
 void MyAES::GenerateKeys() {
   int n = (key_size == 128 ?  16 :  32);
-  int b = (key_size == 128 ? 176 : 240);
   byte temp[4];
   char x;
-
   // Get first 'n' bytes from the original key
   for (int i = 0; i < n && key_file.get(x); ++i) {
     expanded_keys[i] = x;
   }
-
   // Fill the remaining bytes using the specified iterative process
-  for (int processed_bytes = n, it = 1; processed_bytes < b; 
+  for (int processed_bytes = n, it = 1; processed_bytes < expanded_keys.size();
        processed_bytes += 4) {
-    // Assign the value of previous 4 bytes to 'temp'
+    // Assign the value of the previous 4 bytes to 'temp'. We are
+    // going to build the next 4 bytes of our expanded key in 'temp'.
     for (int i = 0; i < 4; ++i) {
       temp[i] = expanded_keys[processed_bytes + i - 4];
     }
-
-    // Every 'n' bytes (size of expanded key) we want to
-    // re-generate the core part of the next expanded key.
+    // Every 'n' bytes (size each key) we want to re-
+    // generate the core part of the next expanded key.
     if (processed_bytes % n == 0) {
       GenerateKeyHelper(temp, it);
       ++it;
     }
-
-    // We need to use the s-table for 256-bit keys to make a substitution.
+    // We need to use the fixed s-table for 256-bit keys to make a substitution
     if (key_size == 256 && processed_bytes % n == (n >> 1)) {
-      for (int i = 0; i < 4; ++i)
+      for (int i = 0; i < 4; ++i) {
         temp[i] = s[temp[i]];
+      }
     }
-    
     // Last Setp: XOR with expanded_keys that are 'n' bytes behind and
-    // finally store the temp key that we've built so far in expanded_keys. 
+    // finally store the temp key that we've built so far in expanded_keys.
     for (int i = 0; i < 4; ++i) {
       temp[i] ^= expanded_keys[processed_bytes + i - n];
       expanded_keys[processed_bytes + i] = temp[i];
@@ -220,13 +206,12 @@ void MyAES::GenerateKeys() {
 void MyAES::Encrypt() {
   int num_rounds = (key_size == 128) ? 10 : 14;
   while (data_size == 16) {
-    // Get next 16 bytes from input file
+    // Get next 16 bytes of data from input file
     FillData();
-    if (data_size == 0)
-      break;
-    
+    // Stop if no data was extracted (i.e. EOF)
+    if (data_size == 0) break;
+    // Do iterative process to encrypt data:
     AddRoundKey(0);
-
     int round;
     for (round = 1; round < num_rounds; ++round) {
       SubBytes();
@@ -234,35 +219,32 @@ void MyAES::Encrypt() {
       MixColumns();
       AddRoundKey(round);
     }
-
     SubBytes();
     ShiftRows();
     AddRoundKey(round);
-
+    // Store encrypted data to output file
     StoreData();
   }
 }
 void MyAES::Decrypt() {
   while (data_size == 16) {
     int round = (key_size == 128) ? 10 : 14;
-    // Get next 16 bytes of input file
+    // Get next 16 bytes of data from input file
     FillData();
-    if (data_size == 0)
-      break;
-
+    // Stop if no data was extracted (i.e. EOF)
+    if (data_size == 0) break;
+    // Do the inverse of the iterative process to decrypt:
     AddRoundKey(round--);
     InvShiftRows();
     InvSubBytes();
-    
     for (; round > 0; --round) {
       AddRoundKey(round);
       InvMixColumns();
       InvShiftRows();
       InvSubBytes();
     }
-
     AddRoundKey(round);
-
+    // Store decrypted data to output file
     StoreData();
   }
 }

@@ -1,10 +1,10 @@
 To compile use:
-  g++ -std=c++11 test_my_aes.c++ my_aes.c++ -o test_my_aes
+  g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
 
 To use the program:
   (Encryption)
-    ./test_my_aes -k key.txt -i input.txt -o output.txt
+    ./run_my_aes -k key.txt -i input.txt -o output.txt
   (Decryption)
-    ./test_my_aes -k key.txt -i output.txt -o a.txt -m decrypt
+    ./run_my_aes -k key.txt -i output.txt -o a.txt -m decrypt
   (Print Help Menu)
-    ./test_my_aes -h
+    ./run_my_aes -h

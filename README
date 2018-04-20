@@ -12,5 +12,5 @@ To use the program:
 Note when using CBC mode:
  - When CBC mode is enabled, the program will use the first 16 bytes of the 
  key file to fill in the initialization vector. The actual key should begin
- AFTER those initial 16 bytes of the key file. 
+ AFTER those initial 16 bytes. 
 

@@ -35,6 +35,19 @@ MyAES::~MyAES() {
 }
 
 // Helper Methods
+void MyAES::CheckPad() {
+  int row, col;
+  row = col = 3;
+  pad_size = 0;
+  while (col >= 0 && data[row][col] == 0) {
+    --row;
+    if(row < 0) {
+      row = 3;
+      --col;
+    }
+    ++pad_size;
+  }
+}
 void MyAES::FillData() {
   char c;
   int row, col;
@@ -145,7 +158,7 @@ void MyAES::InvMixColumns() {
     }
   }
 }
-void MyAES::GenerateKeyCore(byte in[], int i) {
+void MyAES::GenerateKeyHelper(byte in[], int i) {
   ShiftLeft(in);
   for(int a = 0; a < 4; ++a)
     in[a] = s[in[a]];
@@ -160,27 +173,21 @@ void MyAES::AddRoundKey(const int& round) {
   }
 }
 void MyAES::StoreData() {
-  std::cout << "ciphertext: ";
+  CheckPad();
   for(int i = 0, k = 0; i < 4; ++i) {
     for(int j = 0; j < 4; ++j, ++k) {
-      if (k < data_size && data[j][i] != 0) {
+      if (k < data_size - pad_size) {
         out_file << data[j][i];
-        printf("%02x ", data[j][i]);
       }
-      else 
-        printf("[%02x] ", data[j][i]); 
     }
   }
-  std::cout << "\n";
 }
 void MyAES::PrintData() {
   for(int i = 0; i < 4; ++i) {
     for(int j = 0; j < 4; ++j) {
       printf("%02x ", data[i][j]);
     }
-    std::cout << "\n";
   }
-  std::cout << "\n";
 }
 
 // Public Methods
@@ -205,7 +212,7 @@ void MyAES::GenerateKeys() {
     // Every 'n' bytes (size of expanded key) we want to
     // re-generate the core part of the next expanded key.
     if (processed_bytes % n == 0) {
-      GenerateKeyCore(temp, it);
+      GenerateKeyHelper(temp, it);
       ++it;
     }
 

@@ -11,11 +11,13 @@ class MyAES {
   byte data[4][4];
   std::vector<byte> expanded_keys;
   int key_size;
+  int pad_size;
   int data_size;
   std::ifstream key_file;
   std::ofstream out_file;
   std::ifstream in_file;
   // Private Methods
+  void CheckPad();
   void FillData();
   void SubBytes();
   void InvSubBytes();
@@ -26,7 +28,7 @@ class MyAES {
   void InvMixColumns();
   void AddRoundKey(const int& round);
   void StoreData();
-  void GenerateKeyCore(byte* in, int i);
+  void GenerateKeyHelper(byte* in, int i);
   // Used for debugging
   void PrintData();
 

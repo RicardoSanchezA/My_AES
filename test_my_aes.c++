@@ -10,14 +10,14 @@ static void GetOptions(const int& argc, char* argv[], short& key_size,
                        string& key_file, string& input_file,
                        string& output_file, bool& encrypt_mode,
                        bool& ecb_mode) {
-  const char* help_menu = "Program options are: \n -k, --keysize: \
-<keysize> \n -f, --keyfile: <key file> \n -i, --inputfile: <input file> \n -o,\
+  const char* help_menu = "Program options are: \n -s, --keysize: \
+<keysize> \n -k, --keyfile: <key file> \n -i, --inputfile: <input file> \n -o,\
  --outputfile: <output file> \n -m, --mode: <encrypty/decrypt> \n \
 -c, --cbc: to enable CBC mode \n -h, --help: to print this message \n";
-  const char* short_options = "k:f:i:o:m:ch";
+  const char* short_options = "s:k:i:o:m:ch";
   const struct option long_options[] = {
-    {"keysize", required_argument, 0, 'k'},
-    {"keyfile", required_argument, 0, 'f'},
+    {"keysize", required_argument, 0, 's'},
+    {"keyfile", required_argument, 0, 'k'},
     {"inputfile", required_argument, 0, 'i'},
     {"outputfile", required_argument, 0, 'o'},
     {"mode", required_argument, 0, 'm'},
@@ -29,10 +29,10 @@ static void GetOptions(const int& argc, char* argv[], short& key_size,
   while ((opt = getopt_long(argc, argv, short_options, long_options, nullptr))
           != -1) {
     switch(opt) {
-      case 'k': if(strcmp(optarg, "256") == 0)
+      case 's': if(strcmp(optarg, "256") == 0)
                   key_size = 256; 
                 break;
-      case 'f': key_file = optarg; break;
+      case 'k': key_file = optarg; break;
       case 'i': input_file = optarg; break;
       case 'o': output_file = optarg; break;
       case 'm': if(sizeof(optarg) > 0 && optarg[0] == 'd' || optarg[0] == 'D')
@@ -56,8 +56,9 @@ int main(const int argc, char* argv[])
   bool ecb_mode = false;
   bool encrypt_mode = true;
 
-  // Replace parameters with options sent to program
-  GetOptions(argc, argv, key_size, key_file, input_file, output_file, encrypt_mode, ecb_mode);
+  // Replace parameters with options sent to program (if any)
+  GetOptions(argc, argv, key_size, key_file, input_file, output_file, 
+    encrypt_mode, ecb_mode);
 
   // Initialize AES instance with provided parameters
   MyAES my_aes(key_size, key_file, input_file, output_file);

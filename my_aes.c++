@@ -41,11 +41,7 @@ void MyAES::FillData() {
   int row, col;
   row = col = data_size = 0;
 
-  uint8_t hardcoded_input[] = {0x54,0x77,0x6f,0x20,0x4f,0x6e,0x65,0x20,0x4e,0x69,0x6e,0x65,0x20,0x54,0x77,0x6f};
-
-  while (/*in_file >> c &&*/ data_size < 16) {
-    c = hardcoded_input[data_size];
-    printf("c: %x\n", c);
+  while (in_file.get(c) && data_size < 16) {
     data[row][col] = c;
     ++row;
     ++data_size;
@@ -54,7 +50,6 @@ void MyAES::FillData() {
       ++col;
     }
   }
-  printf("data_size: %d\n", data_size);
 }
 void MyAES::SubBytes() {
   for(int i = 0; i < 4; ++i) {
@@ -186,21 +181,17 @@ void MyAES::Encrypt() {
   printf("\n");
 }
 void MyAES::GenerateKeys() {
-  int n = 16;
-  int b = 176;
+  int n = (key_size == 128 ?  16 :  32);
+  int b = (key_size == 128 ? 176 : 240);
   byte temp[4];
-  byte x;
+  char x;
 
-uint8_t original_key[] = {0x54,0x68,0x61,0x74,0x73,0x20,0x6d,0x79,0x20,0x4b,0x75,0x6e,0x67,0x20,0x46,0x75};
-
-  // Read first 'n' bytes from the original key
-  for(int i = 0; i < n /*&& key_file >> x*/; ++i) {
-    //expanded_keys[i] = x;
-    expanded_keys[i] = original_key[i];
-    printf("x: %x\n", expanded_keys[i]);
+  // Get first 'n' bytes from the original key
+  for(int i = 0; i < n && key_file.get(x); ++i) {
+    expanded_keys[i] = x;
   }
 
-  // Fill in the first 176 bytes
+  // Fill the remaining bytes using the specified iterative process
   for(int processed_bytes = n, it = 1; processed_bytes < b; processed_bytes += 4) {
     // Assign the value of previous 4 bytes to 'temp'
     for(int i = 0; i < 4; ++i) {
@@ -215,7 +206,7 @@ uint8_t original_key[] = {0x54,0x68,0x61,0x74,0x73,0x20,0x6d,0x79,0x20,0x4b,0x75
     }
 
     // We need to use the s-table for 256-bit keys to make a substitution.
-    if (key_size == 256 && processed_bytes % n == (n >> 1)) {
+    if (key_size == 256 && processed_bytes == (n >> 1)) {
       for(int i = 0; i < 4; ++i)
         temp[i] = s[temp[i]];
     }

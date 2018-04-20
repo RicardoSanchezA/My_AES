@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include <iostream>
 #include "my_aes.h"
 #include "lookup_tables.h"
 
@@ -41,13 +40,24 @@ void MyAES::FillData() {
   int row, col;
   row = col = data_size = 0;
 
-  while (in_file.get(c) && data_size < 16) {
+  while (data_size < 16 && in_file.get(c)) {
     data[row][col] = c;
     ++row;
-    ++data_size;
-    if (row == 4) {
+    if (row > 3) {
       row = 0;
       ++col;
+    }
+    ++data_size;
+  }
+  if (data_size > 0) {
+    while(data_size < 16) {
+      data[row][col] = 0;
+      ++row;
+      if (row > 3) {
+        row = 0;
+        ++col;
+      }
+      ++data_size;
     }
   }
 }
@@ -152,9 +162,13 @@ void MyAES::AddRoundKey(const int& round) {
 void MyAES::StoreData() {
   std::cout << "ciphertext: ";
   for(int i = 0, k = 0; i < 4; ++i) {
-    for(int j = 0; j < 4 && k < data_size; ++j, ++k) {
-      out_file << data[j][i];
-      printf("%02x ", data[j][i]);
+    for(int j = 0; j < 4; ++j, ++k) {
+      if (k < data_size && data[j][i] != 0) {
+        out_file << data[j][i];
+        printf("%02x ", data[j][i]);
+      }
+      else 
+        printf("[%02x] ", data[j][i]); 
     }
   }
   std::cout << "\n";
@@ -208,13 +222,13 @@ void MyAES::GenerateKeys() {
   }
 
   // Print for debugging
-  int counter = 1;
+  /*int counter = 1;
   for(auto x : expanded_keys) {
     printf("%02x ", x);
     if (counter % 16 == 0)
       printf("\n");
     ++counter;
-  }
+  }*/
 
 }
 void MyAES::Encrypt() {
@@ -240,8 +254,6 @@ void MyAES::Encrypt() {
     AddRoundKey(round);
 
     StoreData();
-
-    printf("\n");
   }
 }
 void MyAES::Decrypt() {

@@ -15,7 +15,7 @@ MyAES::MyAES(const int& _key_size,
   in_file.open(_input_file);
   out_file.open(_output_file);
   // Verify that all files were opened correctly
-  if (!key_file.is_open() || in_file.is_open() || out_file.is_open()) {
+  if (!key_file.is_open() || !in_file.is_open() || !out_file.is_open()) {
     fprintf(stderr, "Error: At least one of the files provided is invalid.\n");
     exit(-1);
   }

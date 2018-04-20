@@ -14,9 +14,8 @@ static void GetOptions(const int& argc, char* argv[], short& key_size,
 <key size> \n -k, --keyfile <key file> \n -i, --inputfile <input file> \n -o,\
  --outputfile <output file> \n -m, --mode [encrypt/decrypt] \
 \n -c, --cbc (enable CBC mode) \n -h, --help (print this message) \n\
-Default values are: \n keysize: 128-bits\n keyfile: \'key.txt\'\n \
-inputfile: \'input.txt\'\n outputfile: \'output.txt\'\n mode: encrypt\n \
-cbc: disabled\n";
+Default values are: \n keysize: 128-bits\n outputfile: \'output.txt\'\n \
+mode: encrypt\n cbc: disabled\n";
   const char* short_options = "s:k:i:o:m:ch";
   const struct option long_options[] = {
     {"keysize", required_argument, 0, 's'},
@@ -48,11 +47,10 @@ cbc: disabled\n";
   }
 }
 
-
 int main (const int argc, char* argv[]) {
   // Initialize parameters with default values
   short key_size = 128;
-  string key_file = "key.txt", input_file = "input.txt",
+  string key_file = "", input_file = "",
     output_file = "output.txt";
   bool cbc_mode = false;
   bool encrypt_mode = true;
@@ -61,6 +59,12 @@ int main (const int argc, char* argv[]) {
   if(argc > 1) {
     GetOptions(argc, argv, key_size, key_file, input_file, output_file, 
       encrypt_mode, cbc_mode);
+  }
+  // Verify that user provided required files
+  if(key_file.size() == 0 || input_file.size() == 0) {
+    fprintf(stderr, "Error: key file and input file are needed in order to \
+run program.\n");
+    exit(-1);
   }
 
   // Initialize AES instance with provided parameters
@@ -75,6 +79,5 @@ int main (const int argc, char* argv[]) {
   } else {
     my_aes.Decrypt();
   }
-
   return 0;
 }

@@ -14,10 +14,16 @@ MyAES::MyAES(const int& _key_size,
   key_file.open(_key_file);
   in_file.open(_input_file);
   out_file.open(_output_file);
+  // Verify that all files were opened correctly
+  if (!key_file.is_open() || in_file.is_open() || out_file.is_open()) {
+    fprintf(stderr, "Error: At least one of the files provided is invalid.\n");
+    exit(-1);
+  }
   // Set CBC mode flag
   cbc_mode = _cbc_mode;
   // Initialize vector where we'll store expanded keys
   expanded_keys = std::vector<byte>(key_size == 128 ? 176 : 240);
+  // Initialize data structures used for CBC mode
   if (cbc_mode) {
     init_vector = std::vector<byte>(16);
     cbc_buffer = std::vector<byte>(16);
@@ -44,7 +50,8 @@ void MyAES::FillInitVector() {
   for (i = 0; i < 16 && key_file.get(c); ++i) {
     init_vector[i] = c;
   }
-  if(i != 16) KeySizeError();
+  // Verify we read full 16 bytes of data from key file
+  if (i != 16) KeySizeError();
 }
 void MyAES::FillData() {
   char c;

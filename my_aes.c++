@@ -8,7 +8,7 @@
 MyAES::MyAES() : data(),
              expanded_keys(),
              key_size(),
-             data_size(0),
+             data_size(16),
              key_file(), 
              in_file(), 
              out_file() {}
@@ -19,7 +19,7 @@ MyAES::MyAES(const int& _key_size,
              data(),
              expanded_keys(),
              key_size(_key_size), 
-             data_size(0),
+             data_size(16),
              key_file(), 
              in_file(), 
              out_file() {
@@ -58,6 +58,13 @@ void MyAES::SubBytes() {
     }
   }
 }
+void MyAES::InvSubBytes() {
+  for(int i = 0; i < 4; ++i) {
+    for(int j = 0; j < 4; ++j) {
+      data[i][j] = inv_s[data[i][j]];
+    }
+  }
+}
 void MyAES::ShiftLeft(byte* row) {
   byte temp = row[0];
   for(int i = 0; i < 3; ++i)
@@ -67,6 +74,13 @@ void MyAES::ShiftLeft(byte* row) {
 void MyAES::ShiftRows() {
   for(int i = 1; i <= 3; ++i) {
     for(int j = 1; j <= i; ++j) {
+      ShiftLeft(data[i]);
+    }
+  }
+}
+void MyAES::InvShiftRows() {
+  for(int i = 1; i <= 3; ++i) {
+    for(int j = 3; j >= i; --j) {
       ShiftLeft(data[i]);
     }
   }
@@ -85,6 +99,24 @@ void MyAES::MixColumns() {
           temp[j][i] ^= two[b];
         if (a == 3)
           temp[j][i] ^= three[b];
+      }
+    }
+  }
+
+  for(int i = 0; i < 4; ++i) {
+    for(int j = 0; j < 4; ++j) {
+      data[i][j] = temp[i][j];
+    }
+  }
+}
+void MyAES::InvMixColumns() {
+  byte temp[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
+
+  for(int i = 0; i < 4; ++i) {
+    for(int j = 0; j < 4; ++j) {
+      for(int k = 0; k < 4; ++k) {
+        int a = inv_galois_matrix[j][k];
+        byte b = data[k][i];
         if (a == 9)
           temp[j][i] ^= nine[b];
         if (a == 11)
@@ -117,15 +149,6 @@ void MyAES::AddRoundKey(const int& round) {
     }
   }
 }
-void MyAES::PrintData() {
-  for(int i = 0; i < 4; ++i) {
-    for(int j = 0; j < 4; ++j) {
-      printf("%02x ", data[i][j]);
-    }
-    std::cout << "\n";
-  }
-  std::cout << "\n";
-}
 void MyAES::StoreData() {
   std::cout << "ciphertext: ";
   for(int i = 0, k = 0; i < 4; ++i) {
@@ -136,50 +159,17 @@ void MyAES::StoreData() {
   }
   std::cout << "\n";
 }
+void MyAES::PrintData() {
+  for(int i = 0; i < 4; ++i) {
+    for(int j = 0; j < 4; ++j) {
+      printf("%02x ", data[i][j]);
+    }
+    std::cout << "\n";
+  }
+  std::cout << "\n";
+}
 
 // Public Methods
-void MyAES::Encrypt() {
-  std::cout << "Fill 4x4 Array:\n";
-  FillData();
-  std::cout << "Round #0\n";
-  std::cout << "AddRoundKey:\n";
-  AddRoundKey(0);
-  PrintData();
-
-  int num_rounds = (key_size == 128) ? 10 : 14;
-  int round;
-  for(round = 1; round < num_rounds; ++round) {
-    std::cout << "Round #" << round << "\n";
-    PrintData();
-    std::cout << "SubBytes:\n";
-    SubBytes();
-    PrintData();
-    std::cout << "ShiftRows:\n";
-    ShiftRows();
-    PrintData();
-    std::cout << "MixColumns:\n";
-    MixColumns();
-    PrintData();
-    std::cout << "AddRoundKey:\n";
-    AddRoundKey(round);
-    PrintData();
-  }
-
-  std::cout << "Round #" << round << "\n";
-  std::cout << "SubBytes:\n";
-  SubBytes();
-  PrintData();
-  std::cout << "ShiftRows:\n";
-  ShiftRows();
-  PrintData();
-  std::cout << "AddRoundKey:\n";
-  AddRoundKey(round);
-  PrintData();
-
-  StoreData();
-
-  printf("\n");
-}
 void MyAES::GenerateKeys() {
   int n = (key_size == 128 ?  16 :  32);
   int b = (key_size == 128 ? 176 : 240);
@@ -226,4 +216,55 @@ void MyAES::GenerateKeys() {
     ++counter;
   }
 
+}
+void MyAES::Encrypt() {
+  int num_rounds = (key_size == 128) ? 10 : 14;
+  while (data_size == 16) {
+    // Get next 16 bytes from input file
+    FillData();
+    if(data_size == 0)
+      break;
+    
+    AddRoundKey(0);
+
+    int round;
+    for(round = 1; round < num_rounds; ++round) {
+      SubBytes();
+      ShiftRows();
+      MixColumns();
+      AddRoundKey(round);
+    }
+
+    SubBytes();
+    ShiftRows();
+    AddRoundKey(round);
+
+    StoreData();
+
+    printf("\n");
+  }
+}
+void MyAES::Decrypt() {
+  while (data_size == 16) {
+    int round = (key_size == 128) ? 10 : 14;
+    // Get next 16 bytes of input file
+    FillData();
+    if(data_size == 0)
+      break;
+
+    AddRoundKey(round--);
+    InvShiftRows();
+    InvSubBytes();
+    
+    for(; round > 0; --round) {
+      AddRoundKey(round);
+      InvMixColumns();
+      InvShiftRows();
+      InvSubBytes();
+    }
+
+    AddRoundKey(round);
+
+    StoreData();
+  }
 }

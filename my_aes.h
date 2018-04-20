@@ -18,9 +18,12 @@ class MyAES {
   // Private Methods
   void FillData();
   void SubBytes();
+  void InvSubBytes();
   void ShiftLeft(byte *in);
   void ShiftRows();
+  void InvShiftRows();
   void MixColumns();
+  void InvMixColumns();
   void AddRoundKey(const int& round);
   void StoreData();
   void GenerateKeyCore(byte* in, int i);
@@ -38,8 +41,9 @@ public:
   // Destructor
   ~MyAES();
   // Public Methods
-  void Encrypt();
   void GenerateKeys();
+  void Encrypt();
+  void Decrypt();
 };
 
 #endif

@@ -60,11 +60,14 @@ int main(const int argc, char* argv[])
   // Initialize AES instance with provided parameters
   MyAES my_aes(key_size, key_file, input_file, output_file);
 
+  // Generate extended keys from original key
   my_aes.GenerateKeys();
+
+  // Either encrypt or decrypt input file
   if(encrypt_mode)
     my_aes.Encrypt();
   else
-    cout << "decrypt\n";
+    my_aes.Decrypt();
 
   return 0;
 }

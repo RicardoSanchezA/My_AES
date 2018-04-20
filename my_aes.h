@@ -23,7 +23,7 @@ class MyAES {
 
  private:
   // Private/Helper Methods
-  void CheckPad();
+  void CheckPadding();
   void FillData();
   void SubBytes();
   void InvSubBytes();

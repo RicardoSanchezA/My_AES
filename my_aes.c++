@@ -2,24 +2,11 @@
 #include "lookup_tables.h"
 
 // MyAES Constructors
-MyAES::MyAES() : data(),
-             expanded_keys(),
-             key_size(),
-             data_size(16),
-             key_file(),
-             in_file(),
-             out_file() {}
+MyAES::MyAES() {}
 MyAES::MyAES(const int& _key_size,
              const std::string& _key_file,
              const std::string& _input_file,
-             const std::string& _output_file) :
-             data(),
-             expanded_keys(),
-             key_size(_key_size),
-             data_size(16),
-             key_file(),
-             in_file(),
-             out_file() {
+             const std::string& _output_file) {
   // Open all required files
   key_file.open(_key_file);
   in_file.open(_input_file);
@@ -29,7 +16,7 @@ MyAES::MyAES(const int& _key_size,
 }
 
 // Pricate/Helper Methods
-void MyAES::CheckPad() {
+void MyAES::CheckPadding() {
   int row, col;
   row = col = 3;
   pad_size = 0;
@@ -158,7 +145,7 @@ void MyAES::AddRoundKey(const int& round) {
   }
 }
 void MyAES::StoreData() {
-  CheckPad();
+  CheckPadding();
   for (int i = 0, k = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j, ++k) {
       if (k < data_size - pad_size) out_file << data[j][i];
@@ -205,7 +192,7 @@ void MyAES::GenerateKeys() {
 }
 void MyAES::Encrypt() {
   int num_rounds = (key_size == 128) ? 10 : 14;
-  while (data_size == 16) {
+  while (1) {
     // Get next 16 bytes of data from input file
     FillData();
     // Stop if no data was extracted (i.e. EOF)
@@ -227,7 +214,7 @@ void MyAES::Encrypt() {
   }
 }
 void MyAES::Decrypt() {
-  while (data_size == 16) {
+  while (1) {
     int round = (key_size == 128) ? 10 : 14;
     // Get next 16 bytes of data from input file
     FillData();
@@ -251,6 +238,7 @@ void MyAES::Decrypt() {
 
 // MyAES Destructor
 MyAES::~MyAES() {
+  // Close all files
   key_file.close();
   in_file.close();
   out_file.close();

@@ -3,8 +3,14 @@ To compile use:
 
 To use the program:
   (Encryption)
-    ./run_my_aes -k key.txt -i input.txt -o output.txt
+    ./run_my_aes -s 128 -k key.txt -i input.txt -o cipher.txt
   (Decryption)
-    ./run_my_aes -k key.txt -i output.txt -o a.txt -m decrypt
+    ./run_my_aes -s 128 -k key.txt -i cipher.txt -o output.txt -m decrypt
   (Print Help Menu)
     ./run_my_aes -h
+
+Note when using CBC mode:
+ - When CBC mode is enabled, the program will use the first 16 bytes of the 
+ key file to fill in the initialization vector. The actual key should begin
+ AFTER those initial 16 bytes of the key file. 
+

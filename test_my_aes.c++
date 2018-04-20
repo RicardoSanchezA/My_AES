@@ -29,13 +29,12 @@ static void GetOptions(const int& argc, char* argv[], short& key_size,
   while ((opt = getopt_long(argc, argv, short_options, long_options, nullptr))
           != -1) {
     switch(opt) {
-      case 's': if(strcmp(optarg, "256") == 0)
-                  key_size = 256; 
+      case 's': if (strcmp(optarg, "256") == 0) key_size = 256; 
                 break;
       case 'k': key_file = optarg; break;
       case 'i': input_file = optarg; break;
       case 'o': output_file = optarg; break;
-      case 'm': if(sizeof(optarg) > 0 && optarg[0] == 'd' || optarg[0] == 'D')
+      case 'm': if (sizeof(optarg) > 0 && optarg[0] == 'd' || optarg[0] == 'D')
                   encrypt_mode = false;
                 break;
       case 'c': ecb_mode = true; break;
@@ -47,8 +46,7 @@ static void GetOptions(const int& argc, char* argv[], short& key_size,
 }
 
 
-int main(const int argc, char* argv[])
-{
+int main (const int argc, char* argv[]) {
   // Initialize parameters with default values
   short key_size = 128;
   string key_file = "key.txt", input_file = "input.txt",
@@ -57,8 +55,10 @@ int main(const int argc, char* argv[])
   bool encrypt_mode = true;
 
   // Replace parameters with options sent to program (if any)
-  GetOptions(argc, argv, key_size, key_file, input_file, output_file, 
-    encrypt_mode, ecb_mode);
+  if(argc > 1) {
+    GetOptions(argc, argv, key_size, key_file, input_file, output_file, 
+      encrypt_mode, ecb_mode);
+  }
 
   // Initialize AES instance with provided parameters
   MyAES my_aes(key_size, key_file, input_file, output_file);
@@ -67,10 +67,11 @@ int main(const int argc, char* argv[])
   my_aes.GenerateKeys();
 
   // Either encrypt or decrypt input file
-  if(encrypt_mode)
+  if(encrypt_mode) {
     my_aes.Encrypt();
-  else
+  } else {
     my_aes.Decrypt();
+  }
 
   return 0;
 }

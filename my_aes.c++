@@ -6,16 +6,25 @@ MyAES::MyAES() {}
 MyAES::MyAES(const int& _key_size,
              const std::string& _key_file,
              const std::string& _input_file,
-             const std::string& _output_file) {
+             const std::string& _output_file,
+             const bool& _cbc_mode) {
+  // Set the key size
+  key_size = _key_size;
   // Open all required files
   key_file.open(_key_file);
   in_file.open(_input_file);
   out_file.open(_output_file);
+  // Set CBC mode flag
+  cbc_mode = _cbc_mode;
   // Initialize vector where we'll store expanded keys
   expanded_keys = std::vector<byte>(key_size == 128 ? 176 : 240);
+  if (cbc_mode) {
+    init_vector = std::vector<byte>(16);
+    cbc_buffer = std::vector<byte>(16);
+  }
 }
 
-// Pricate/Helper Methods
+// Private/Helper Methods
 void MyAES::CheckPadding() {
   int row, col;
   row = col = 3;
@@ -28,6 +37,14 @@ void MyAES::CheckPadding() {
     }
     ++pad_size;
   }
+}
+void MyAES::FillInitVector() {
+  int i;
+  char c;
+  for (i = 0; i < 16 && key_file.get(c); ++i) {
+    init_vector[i] = c;
+  }
+  if(i != 16) KeySizeError();
 }
 void MyAES::FillData() {
   char c;
@@ -152,15 +169,47 @@ void MyAES::StoreData() {
     }
   }
 }
+void MyAES::CopyData(std::vector<byte>& v) {
+  for (int i = 0, k = 0; i < 4; ++i) { 
+    for (int j = 0; j < 4; ++j, ++k) {
+      v[k] = data[j][i];
+    }
+  }
+}
+void MyAES::XorDataCBC() {
+  for (int i = 0, k = 0; i < 4; ++i) { 
+    for (int j = 0; j < 4; ++j, ++k) {
+      data[j][i] ^= cbc_buffer[k];
+    }
+  }
+}
+void MyAES::KeySizeError() {
+  fprintf(stderr, "Error: the key file provided is not large to span a key \
+of %d-bits.\n", key_size);
+  exit(-1);
+}
 
 // Public Methods
 void MyAES::GenerateKeys() {
+  // When CBC mode is enabled, the first 16 bytes of the key file are used 
+  // uniquely for the init. vector (i.e. the user must assert that the key
+  // (s)he wants to use should start 16 bytes after the beginning of their key-
+  // file. The first 16 bytes of the keyfile must represent the init. vector).
+  if (cbc_mode) FillInitVector();
+
   int n = (key_size == 128 ?  16 :  32);
   byte temp[4];
   char x;
   // Get first 'n' bytes from the original key
-  for (int i = 0; i < n && key_file.get(x); ++i) {
-    expanded_keys[i] = x;
+  {
+    int i;
+    for (i = 0; i < n && key_file.get(x); ++i) {
+      expanded_keys[i] = x;
+    }
+    // Verify that we actually read all bytes of key.
+    if (i != n) {
+      KeySizeError();
+    }
   }
   // Fill the remaining bytes using the specified iterative process
   for (int processed_bytes = n, it = 1; processed_bytes < expanded_keys.size();
@@ -191,12 +240,20 @@ void MyAES::GenerateKeys() {
   }
 }
 void MyAES::Encrypt() {
+  // Load the init_vector into the cbc_buffer.
+  if (cbc_mode) std::copy(init_vector.begin(), init_vector.end(), 
+                          cbc_buffer.begin());
+  // Get the appropriate number of rounds needed depending on key size
   int num_rounds = (key_size == 128) ? 10 : 14;
   while (1) {
     // Get next 16 bytes of data from input file
     FillData();
     // Stop if no data was extracted (i.e. EOF)
     if (data_size == 0) break;
+    
+    // XOR the 16 bytes of data with whatever is in 'cbc_buffer'
+    if (cbc_mode) XorDataCBC();
+
     // Do iterative process to encrypt data:
     AddRoundKey(0);
     int round;
@@ -211,15 +268,27 @@ void MyAES::Encrypt() {
     AddRoundKey(round);
     // Store encrypted data to output file
     StoreData();
+    // Copy the 16 bytes of ciphertext to 'cbc_buffer'
+    if (cbc_mode) CopyData(cbc_buffer);
   }
 }
 void MyAES::Decrypt() {
+  // 'temp' is only used for CBC mode
+  std::vector<byte> temp(init_vector);
   while (1) {
+    // Copy whatever is in 'temp' into the cbc_buffer.
+    if (cbc_mode) std::copy(temp.begin(), temp.end(), 
+                            cbc_buffer.begin());
+    // Get the appropriate number of rounds needed depending on key size
     int round = (key_size == 128) ? 10 : 14;
     // Get next 16 bytes of data from input file
     FillData();
     // Stop if no data was extracted (i.e. EOF)
     if (data_size == 0) break;
+    
+    // Copy the 16 bytes of data into 'temp'
+    if (cbc_mode) CopyData(temp);
+
     // Do the inverse of the iterative process to decrypt:
     AddRoundKey(round--);
     InvShiftRows();
@@ -231,6 +300,9 @@ void MyAES::Decrypt() {
       InvSubBytes();
     }
     AddRoundKey(round);
+
+    // XOR the 16 bytes of decrypted data with whatever is in cbc_buffer
+    if (cbc_mode) XorDataCBC();
     // Store decrypted data to output file
     StoreData();
   }

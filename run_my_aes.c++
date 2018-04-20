@@ -9,7 +9,7 @@ using namespace std;
 static void GetOptions(const int& argc, char* argv[], short& key_size,
                        string& key_file, string& input_file,
                        string& output_file, bool& encrypt_mode,
-                       bool& ecb_mode) {
+                       bool& cbc_mode) {
   const char* help_menu = "Program options are: \n -s, --keysize \
 <key size> \n -k, --keyfile <key file> \n -i, --inputfile <input file> \n -o,\
  --outputfile <output file> \n -m, --mode [encrypt/decrypt] \
@@ -40,7 +40,7 @@ cbc: disabled\n";
       case 'm': if (sizeof(optarg) > 0 && optarg[0] == 'd' || optarg[0] == 'D')
                   encrypt_mode = false;
                 break;
-      case 'c': ecb_mode = true; break;
+      case 'c': cbc_mode = true; break;
       case 'h':
       case '?': fprintf(stderr,"%s", help_menu);
       default: cout<<"\n"; exit(0);
@@ -54,17 +54,17 @@ int main (const int argc, char* argv[]) {
   short key_size = 128;
   string key_file = "key.txt", input_file = "input.txt",
     output_file = "output.txt";
-  bool ecb_mode = false;
+  bool cbc_mode = false;
   bool encrypt_mode = true;
 
   // Replace parameters with options sent to program (if any)
   if(argc > 1) {
     GetOptions(argc, argv, key_size, key_file, input_file, output_file, 
-      encrypt_mode, ecb_mode);
+      encrypt_mode, cbc_mode);
   }
 
   // Initialize AES instance with provided parameters
-  MyAES my_aes(key_size, key_file, input_file, output_file);
+  MyAES my_aes(key_size, key_file, input_file, output_file, cbc_mode);
 
   // Generate extended keys from original key
   my_aes.GenerateKeys();

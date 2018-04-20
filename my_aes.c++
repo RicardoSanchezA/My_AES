@@ -206,7 +206,7 @@ void MyAES::GenerateKeys() {
     }
 
     // We need to use the s-table for 256-bit keys to make a substitution.
-    if (key_size == 256 && processed_bytes == (n >> 1)) {
+    if (key_size == 256 && processed_bytes % n == (n >> 1)) {
       for(int i = 0; i < 4; ++i)
         temp[i] = s[temp[i]];
     }

@@ -14,7 +14,7 @@ static void GetOptions(const int& argc, char* argv[], uint16_t& key_size,
 <key size> \n -k, --keyfile <key file> \n -i, --inputfile <input file> \n -o,\
  --outputfile <output file> \n -m, --mode [encrypt/decrypt] \
 \n -c, --cbc (enable CBC mode) \n -h, --help (print this message) \n\
-Default values are: \n keysize: 128-bits\n outputfile: \'output.txt\'\n \
+Default values are: \n keysize: 128-bits\n outputfile: \'output\'\n \
 mode: encrypt\n cbc: disabled\n";
   const char* short_options = "s:k:i:o:m:ch";
   const struct option long_options[] = {

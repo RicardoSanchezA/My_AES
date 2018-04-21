@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
         printf("%02x ", t);
       }
       printf("\n");
+      file.close();
     }
   }
   return 0;

@@ -3,6 +3,7 @@
 g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
 ```
 
+
 ### Usage:
   (Encryption)
 ```
@@ -18,7 +19,8 @@ g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
 ```
 ./run_my_aes -h
 ```
-    
+
+
 
  ### Testing:
    We provided a tool 'read_hex', so that you can easily read the cipher-text produced by our program. To compile it:
@@ -27,61 +29,63 @@ g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
 g++ -std=c++11 read_hex.c++ -o read_hex
 ```
    
-   **(Sample 1)** 128-bit
-> key: 00000000000000000000000000000000
+ **(Sample 1)** 128-bit
+ 
+`key1: 00000000000000000000000000000000`
 
-> input1: 00000000000000000000000000000000 
+`input1: 00000000000000000000000000000000`
      
 ```
-./run_my_aes --keyfile key --inputfile input1 --outputfile out
-./read_hex out
+./run_my_aes --keyfile key1 --inputfile input1 --outputfile cipher1
+./read_hex cipher1
 ```
    
 > cipher-text: 66E94BD4EF8A2C3B884CFA59CA342B2E
    
    
-   **(Sample 2)** 256-bit
-> key2: 00000000000000000000000000000000
+**(Sample 2)** 256-bit
 
-> input2: 00112233445566778899AABBCCDDEEFF
+`key2: 00000000000000000000000000000000`
+
+`input2: 00112233445566778899AABBCCDDEEFF`
      
 ```
-./run_my_aes -k key2 -i input2 -o out2 -s 256
-./read_hex out2
+./run_my_aes -k key2 -i input2 -o cipher2 -s 256
+./read_hex cipher2
 ```
    
 > cipher-text: 1C060F4C9E7EA8D6CA961A2D64C05C18
    
    
-   **(Sample 3)** 128-bit w/CBC Mode
-> key3: 000102030405060708090A0B0C0D0E0F2b7e151628aed2a6abf7158809cf4f3c
+**(Sample 3)** 128-bit w/CBC Mode
 
-> input3: 6bc1bee22e409f96e93d7e117393172a
+`key3: 000102030405060708090A0B0C0D0E0F2b7e151628aed2a6abf7158809cf4f3c`
+
+`input3: 6bc1bee22e409f96e93d7e117393172a`
 
 ```
-./run_my_aes -k key3 -i input3 -o out3 --cbc
-./read_hex out3
+./run_my_aes -k key3 -i input3 -o cipher3 --cbc
+./read_hex cipher3
 ```
 
 > cipher-text: 7649abac8119b246cee98e9b12e9197d
    
-   
-   **(Sample 4)** 256-bit w/CBC Mode
-> key4: F58C4C04D6E5F1BA779EABFB5F7BFBD6603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4
 
-> input4: ae2d8a571e03ac9c9eb76fac45af8e51
+
+**(Sample 4)** 256-bit w/CBC Mode
+
+`key4: F58C4C04D6E5F1BA779EABFB5F7BFBD6603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4`
+
+`input4: ae2d8a571e03ac9c9eb76fac45af8e51`
 
 ```
-./run_my_aes -s 256 -k key4 -i input4 -o out4 --cbc
-./read_hex out4
+./run_my_aes -s 256 -k key4 -i input4 -o cipher4 --cbc
+./read_hex cipher4
 ```
 
 > cipher-text: 9cfc4e967edb808d679f777bc6702c7d
 
 
-#### Note when using CBC mode:
-  When CBC mode is enabled, the program will use the first 16 bytes of the 
-  key file to fill in the initialization vector. The actual key should begin
-  AFTER those initial 16 bytes of the key file. 
+**CBC mode note:** When CBC mode is enabled, our program will use the first 16 bytes of the key file to fill in the initialization vector. The actual key should begin AFTER those initial 16 bytes of the key file. For instance, in *Sample 3* the I.V. is "000102030405060708090A0B0C0D0E0F" and the actual 128-bit key is "2b7e151628aed2a6abf7158809cf4f3c".
 
 

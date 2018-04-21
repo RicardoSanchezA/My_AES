@@ -45,7 +45,7 @@ class MyAES {
   std::vector<byte> expanded_keys;
   std::vector<byte> init_vector;
   std::vector<byte> cbc_buffer;
-  uint8_t key_size;
+  uint16_t key_size;
   uint8_t pad_size;
   uint8_t data_size;
   bool cbc_mode;

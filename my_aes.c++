@@ -219,7 +219,7 @@ void MyAES::GenerateKeys() {
     }
   }
   // Fill the remaining bytes using the specified iterative process
-  for (uint8_t processed_bytes = n, it = 1; 
+  for (uint16_t processed_bytes = n, it = 1; 
        processed_bytes < expanded_keys.size(); processed_bytes += 4) {
     // Assign the value of the previous 4 bytes to 'temp'. We are
     // going to build the next 4 bytes of our expanded key in 'temp'.

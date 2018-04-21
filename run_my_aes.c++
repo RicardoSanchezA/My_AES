@@ -6,7 +6,7 @@
 
 using namespace std;
 
-static void GetOptions(const int& argc, char* argv[], short& key_size,
+static void GetOptions(const int& argc, char* argv[], uint16_t& key_size,
                        string& key_file, string& input_file,
                        string& output_file, bool& encrypt_mode,
                        bool& cbc_mode) {
@@ -49,7 +49,7 @@ mode: encrypt\n cbc: disabled\n";
 
 int main (const int argc, char* argv[]) {
   // Initialize parameters with default values
-  short key_size = 128;
+  uint16_t key_size = 128;
   string key_file = "", input_file = "",
     output_file = "output.txt";
   bool cbc_mode = false;

@@ -51,7 +51,7 @@ int main (const int argc, char* argv[]) {
   // Initialize parameters with default values
   uint16_t key_size = 128;
   string key_file = "", input_file = "",
-    output_file = "output.txt";
+    output_file = "output";
   bool cbc_mode = false;
   bool encrypt_mode = true;
 

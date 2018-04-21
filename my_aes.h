@@ -10,7 +10,7 @@ class MyAES {
  public:
   // Constructors
   MyAES();
-  MyAES(const int& _key_size,
+  MyAES(const uint16_t& _key_size,
         const std::string& _key_file,
         const std::string& _input_file,
         const std::string& _output_file,
@@ -34,9 +34,9 @@ class MyAES {
   void InvShiftRows();
   void MixColumns();
   void InvMixColumns();
-  void AddRoundKey(const int& round);
+  void AddRoundKey(const uint8_t& round);
   void StoreData();
-  void GenerateKeyHelper(byte* in, int i);
+  void GenerateKeyHelper(byte* in, uint8_t i);
   void CopyData(std::vector<byte>& v);
   void XorDataCBC();
   void KeySizeError();
@@ -45,9 +45,9 @@ class MyAES {
   std::vector<byte> expanded_keys;
   std::vector<byte> init_vector;
   std::vector<byte> cbc_buffer;
-  int key_size;
-  int pad_size;
-  int data_size;
+  uint8_t key_size;
+  uint8_t pad_size;
+  uint8_t data_size;
   bool cbc_mode;
   std::ifstream key_file;
   std::ofstream out_file;

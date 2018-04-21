@@ -1,11 +1,8 @@
-#include <iostream>
 #include <fstream>
-
-using namespace std;
 
 int main(int argc, char** argv) {
   if (argc > 1) {
-    ifstream file;
+    std::ifstream file;
     file.open(argv[1]);
     if (file.is_open()) {
       char c;

@@ -21,8 +21,8 @@ g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
     
 
  ### Testing:
-   We provided a tool 'read_hex', so that you can easily read the cipher-
-   text produced by our program.
+   We provided a tool 'read_hex', so that you can easily read the cipher-text produced by our program.
+   
    **(Sample 1)**
 > key: 00000000000000000000000000000000
 
@@ -46,7 +46,7 @@ g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
    
 > cipher-text: 1C060F4C9E7EA8D6CA961A2D64C05C18
 
-### Note when using CBC mode:
+#### Note when using CBC mode:
   When CBC mode is enabled, the program will use the first 16 bytes of the 
   key file to fill in the initialization vector. The actual key should begin
   AFTER those initial 16 bytes of the key file. 

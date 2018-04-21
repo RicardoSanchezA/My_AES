@@ -25,8 +25,8 @@ class MyAES {
  private:
   // Private/Helper Methods
   void CheckPadding();
-  void FillInitVector();
-  void FillData();
+  void LoadInitVector();
+  void LoadData();
   void SubBytes();
   void InvSubBytes();
   void ShiftLeft(byte *in);
@@ -34,16 +34,14 @@ class MyAES {
   void InvShiftRows();
   void MixColumns();
   void InvMixColumns();
-  void AddRoundKey(const uint8_t& round);
   void StoreData();
-  void GenerateKeyHelper(byte* in, uint8_t i);
+  void GenerateKeyHelper(byte* in, const uint8_t& i);
   void CopyData(std::vector<byte>& v);
-  void XorDataCBC();
+  void XorData(const std::vector<byte>& v, const uint8_t& offset = 0);
   void KeySizeError();
   // Private Data
   byte data[4][4];
   std::vector<byte> expanded_keys;
-  std::vector<byte> init_vector;
   std::vector<byte> cbc_buffer;
   uint16_t key_size;
   uint8_t pad_size;

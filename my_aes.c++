@@ -25,7 +25,6 @@ MyAES::MyAES(const uint16_t& _key_size,
   expanded_keys = std::vector<byte>(key_size == 128 ? 176 : 240);
   // Initialize data structures used for CBC mode
   if (cbc_mode) {
-    init_vector = std::vector<byte>(16);
     cbc_buffer = std::vector<byte>(16);
   }
 }
@@ -44,16 +43,18 @@ void MyAES::CheckPadding() {
     ++pad_size;
   }
 }
-void MyAES::FillInitVector() {
+void MyAES::LoadInitVector() {
   uint8_t i;
   char c;
+  // The first 16 bytes of the key-file represent the
+  // init. vector (whenever CBC mode is enabled).
   for (i = 0; i < 16 && key_file.get(c); ++i) {
-    init_vector[i] = c;
+    cbc_buffer[i] = c;
   }
   // Verify we read full 16 bytes of data from key file
   if (i != 16) KeySizeError();
 }
-void MyAES::FillData() {
+void MyAES::LoadData() {
   char c;
   uint8_t row, col;
   row = col = data_size = 0;
@@ -68,8 +69,8 @@ void MyAES::FillData() {
     ++data_size;
   }
   if (data_size > 0) {
-    // If the data matrix is not full, fill
-    // in the remaining spots with zeroes.
+    // If the data matrix is partially full, then
+    // fill in the remaining spots with zeros.
     while (data_size < 16) {
       data[row][col] = 0;
       ++row;
@@ -154,19 +155,12 @@ void MyAES::InvMixColumns() {
     }
   }
 }
-void MyAES::GenerateKeyHelper(byte in[], uint8_t i) {
+void MyAES::GenerateKeyHelper(byte in[], const uint8_t& i) {
   ShiftLeft(in);
   for (uint8_t a = 0; a < 4; ++a) {
     in[a] = s[in[a]];
   }
   in[0] ^= rcon[i];
-}
-void MyAES::AddRoundKey(const uint8_t& round) {
-  for (uint8_t i = 0, k = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j, ++k) {
-      data[j][i] = data[j][i] ^ expanded_keys[round*16 + k];
-    }
-  }
 }
 void MyAES::StoreData() {
   CheckPadding();
@@ -183,10 +177,10 @@ void MyAES::CopyData(std::vector<byte>& v) {
     }
   }
 }
-void MyAES::XorDataCBC() {
+void MyAES::XorData(const std::vector<byte>& v, const uint8_t& offset) {
   for (uint8_t i = 0, k = 0; i < 4; ++i) { 
     for (uint8_t j = 0; j < 4; ++j, ++k) {
-      data[j][i] ^= cbc_buffer[k];
+      data[j][i] ^= v[k + offset];
     }
   }
 }
@@ -202,7 +196,7 @@ void MyAES::GenerateKeys() {
   // uniquely for the init. vector (i.e. the user must assert that the key
   // (s)he wants to use should start 16 bytes after the beginning of their key-
   // file. The first 16 bytes of the keyfile must represent the init. vector).
-  if (cbc_mode) FillInitVector();
+  if (cbc_mode) LoadInitVector();
 
   uint8_t n = (key_size == 128 ?  16 :  32);
   byte temp[4];
@@ -214,11 +208,9 @@ void MyAES::GenerateKeys() {
       expanded_keys[i] = x;
     }
     // Verify that we actually read all bytes of key.
-    if (i != n) {
-      KeySizeError();
-    }
+    if (i != n) KeySizeError();
   }
-  // Fill the remaining bytes using the specified iterative process
+  // Generate expanded keys using the specified iterative process
   for (uint16_t processed_bytes = n, it = 1; 
        processed_bytes < expanded_keys.size(); processed_bytes += 4) {
     // Assign the value of the previous 4 bytes to 'temp'. We are
@@ -247,41 +239,43 @@ void MyAES::GenerateKeys() {
   }
 }
 void MyAES::Encrypt() {
-  // Load the init_vector into the cbc_buffer.
-  if (cbc_mode) std::copy(init_vector.begin(), init_vector.end(), 
-                          cbc_buffer.begin());
   // Get the appropriate number of rounds needed depending on key size
   uint8_t num_rounds = (key_size == 128) ? 10 : 14;
   while (1) {
     // Get next 16 bytes of data from input file
-    FillData();
+    LoadData();
     // Stop if no data was extracted (i.e. EOF)
     if (data_size == 0) break;
     // XOR the 16 bytes of data with whatever is in 'cbc_buffer'
-    if (cbc_mode) XorDataCBC();
+    // 'cbc_buffer' initially holds the initialization vector.
+    if (cbc_mode) XorData(cbc_buffer);
     
     // Do iterative process to encrypt data:
-    AddRoundKey(0);
-    uint8_t round;
-    for (round = 1; round < num_rounds; ++round) {
+    uint8_t round = 0;
+    // Add/XOR Round Key:
+    XorData(expanded_keys, round*16);
+    for (++round; round < num_rounds; ++round) {
       SubBytes();
       ShiftRows();
       MixColumns();
-      AddRoundKey(round);
+      //Add/XOR Round Key:
+      XorData(expanded_keys, round*16);
     }
     SubBytes();
     ShiftRows();
-    AddRoundKey(round);
+    // Add/XOR Round Key:
+    XorData(expanded_keys, round*16);
 
     // Store encrypted data to output file
     StoreData();
-    // Copy the 16 bytes of ciphertext to 'cbc_buffer'
+    // Copy the 16 bytes of cipher-text to 'cbc_buffer'
     if (cbc_mode) CopyData(cbc_buffer);
   }
 }
 void MyAES::Decrypt() {
-  // 'temp' is only used for CBC mode; we initialize it to the init. vector
-  std::vector<byte> temp(init_vector);
+  // 'temp' is only used for CBC mode; we initialize it to the
+  // cbc_buffer, which initially holds the init. vector.
+  std::vector<byte> temp(cbc_buffer);
   while (1) {
     // Copy whatever is in 'temp' into the cbc_buffer.
     if (cbc_mode) std::copy(temp.begin(), temp.end(), 
@@ -289,26 +283,29 @@ void MyAES::Decrypt() {
     // Get the appropriate number of rounds needed depending on key size
     uint8_t round = (key_size == 128) ? 10 : 14;
     // Get next 16 bytes of data from input file
-    FillData();
+    LoadData();
     // Stop if no data was extracted (i.e. EOF)
     if (data_size == 0) break;
     // Copy the 16 bytes of data into 'temp'
     if (cbc_mode) CopyData(temp);
 
     // Do the inverse of the iterative process to decrypt:
-    AddRoundKey(round--);
+    // Add/XOR Round Key:
+    XorData(expanded_keys, (round--)*16);
     InvShiftRows();
     InvSubBytes();
     for (; round > 0; --round) {
-      AddRoundKey(round);
+      // Add/XOR Round Key:
+      XorData(expanded_keys, round*16);
       InvMixColumns();
       InvShiftRows();
       InvSubBytes();
     }
-    AddRoundKey(round);
+    // Add/XOR Round Key:
+    XorData(expanded_keys, round*16);
 
     // XOR the 16 bytes of decrypted data with whatever is in cbc_buffer
-    if (cbc_mode) XorDataCBC();
+    if (cbc_mode) XorData(cbc_buffer);
     // Store decrypted data to output file
     StoreData();
   }

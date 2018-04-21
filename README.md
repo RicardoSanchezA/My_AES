@@ -21,7 +21,11 @@ g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
     
 
  ### Testing:
-   We provided a tool 'read_hex', so that you can easily read the cipher-text produced by our program.
+   We provided a tool 'read_hex', so that you can easily read the cipher-text produced by our program. To compile it:
+   
+```
+g++ -std=c++11 read_hex.c++ -o read_hex
+```
    
    **(Sample 1)**
 > key: 00000000000000000000000000000000
@@ -29,7 +33,7 @@ g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
 > input1: 00000000000000000000000000000000 
      
 ```
-./run_my_aes -k key -i input1 -o out
+./run_my_aes --keyfile key --inputfile input1 --outputfile out
 ./read_hex out
 ```
    

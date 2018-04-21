@@ -1,6 +1,12 @@
 #include "my_aes.h"
 #include "lookup_tables.h"
 
+// Error message
+const char* key_error_message = "Error: the key file provided is not large \
+to contain a key of the specified size.";
+const char* file_error_message = "Error: At least one of the files provided \
+is invalid.";
+
 // MyAES Constructors
 MyAES::MyAES() {}
 MyAES::MyAES(const uint16_t& _key_size,
@@ -16,8 +22,7 @@ MyAES::MyAES(const uint16_t& _key_size,
   out_file.open(_output_file);
   // Verify that all files were opened correctly
   if (!key_file.is_open() || !in_file.is_open() || !out_file.is_open()) {
-    fprintf(stderr, "Error: At least one of the files provided is invalid.\n");
-    exit(-1);
+    Error(file_error_message);
   }
   // Set CBC mode flag
   cbc_mode = _cbc_mode;
@@ -25,19 +30,19 @@ MyAES::MyAES(const uint16_t& _key_size,
   expanded_keys = std::vector<byte>(key_size == 128 ? 176 : 240);
   // Initialize data structures used for CBC mode
   if (cbc_mode) {
-    cbc_buffer = std::vector<byte>(16);
+    cbc_buffer = std::vector<byte>(DATA_SIZE);
   }
 }
 
 // Private/Helper Methods
 void MyAES::CheckPadding() {
   int8_t row, col;
-  row = col = 3;
+  row = col = DATA_DIMENSION-1;
   pad_size = 0;
   while (col >= 0 && data[row][col] == 0) {
     --row;
     if (row < 0) {
-      row = 3;
+      row = DATA_DIMENSION-1;
       --col;
     }
     ++pad_size;
@@ -48,21 +53,21 @@ void MyAES::LoadInitVector() {
   char c;
   // The first 16 bytes of the key-file represent the
   // init. vector (whenever CBC mode is enabled).
-  for (i = 0; i < 16 && key_file.get(c); ++i) {
+  for (i = 0; i < DATA_SIZE && key_file.get(c); ++i) {
     cbc_buffer[i] = c;
   }
   // Verify we read full 16 bytes of data from key file
-  if (i != 16) KeySizeError();
+  if (i != DATA_SIZE) Error(key_error_message);
 }
 void MyAES::LoadData() {
   char c;
   uint8_t row, col;
   row = col = data_size = 0;
   // Read data from input file (one char/byte at a time)
-  while (data_size < 16 && in_file.get(c)) {
+  while (data_size < DATA_SIZE && in_file.get(c)) {
     data[row][col] = c;
     ++row;
-    if (row > 3) {
+    if (row > DATA_DIMENSION-1) {
       row = 0;
       ++col;
     }
@@ -71,10 +76,10 @@ void MyAES::LoadData() {
   if (data_size > 0) {
     // If the data matrix is partially full, then
     // fill in the remaining spots with zeros.
-    while (data_size < 16) {
+    while (data_size < DATA_SIZE) {
       data[row][col] = 0;
       ++row;
-      if (row > 3) {
+      if (row > DATA_DIMENSION-1) {
         row = 0;
         ++col;
       }
@@ -82,111 +87,116 @@ void MyAES::LoadData() {
     }
   }
 }
-void MyAES::SubBytes() {
-  for (uint8_t i = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j) {
-      data[i][j] = s[data[i][j]];
-    }
-  }
-}
-void MyAES::InvSubBytes() {
-  for (uint8_t i = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j) {
-      data[i][j] = inv_s[data[i][j]];
+void MyAES::SubBytes(const uint8_t* table) {
+  for (uint8_t i = 0; i < DATA_DIMENSION; ++i) {
+    for (uint8_t j = 0; j < DATA_DIMENSION; ++j) {
+      data[i][j] = table[data[i][j]];
     }
   }
 }
 void MyAES::ShiftLeft(byte* row) {
   byte temp = row[0];
-  for (uint8_t i = 0; i < 3; ++i)
+  for (uint8_t i = 0; i < DATA_DIMENSION-1; ++i)
     row[i] = row[i + 1];
-  row[3] = temp;
+  row[DATA_DIMENSION-1] = temp;
 }
 void MyAES::ShiftRows() {
-  for (uint8_t i = 1; i <= 3; ++i) {
+  for (uint8_t i = 1; i <= DATA_DIMENSION-1; ++i) {
     for (uint8_t j = 1; j <= i; ++j) {
       ShiftLeft(data[i]);
     }
   }
 }
 void MyAES::InvShiftRows() {
-  for (uint8_t i = 1; i <= 3; ++i) {
-    for (uint8_t j = 3; j >= i; --j) {
+  for (uint8_t i = 1; i <= DATA_DIMENSION-1; ++i) {
+    for (uint8_t j = DATA_DIMENSION-1; j >= i; --j) {
       ShiftLeft(data[i]);
     }
   }
 }
-void MyAES::MixColumns() {
-  byte temp[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-  for (uint8_t i = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j) {
-      for (uint8_t k = 0; k < 4; ++k) {
-        uint8_t a = galois_matrix[j][k];
+void MyAES::MixColumns(const uint8_t (&matrix)[DATA_DIMENSION][DATA_DIMENSION]){
+  byte temp[DATA_DIMENSION][DATA_DIMENSION] = {{0,0,0,0},{0,0,0,0},
+                                               {0,0,0,0},{0,0,0,0}};
+  // We will use 'temp' to store the result of the matrix multiplication
+  // between 'data' and 'matrix'. 'matrix' will either be 'galois_matrix'
+  // or 'inv_galois_matrix' depending on whether we're doing MixColumns  
+  // or InvMixColumns.
+  for (uint8_t i = 0; i < DATA_DIMENSION; ++i) {
+    for (uint8_t j = 0; j < DATA_DIMENSION; ++j) {
+      for (uint8_t k = 0; k < DATA_DIMENSION; ++k) {
+        uint8_t a = matrix[j][k];
         byte b = data[k][i];
-        if (a == 1) temp[j][i] ^= b;
-        if (a == 2) temp[j][i] ^= two[b];
-        if (a == 3) temp[j][i] ^= three[b];
+        switch(a) {
+          case 1: temp[j][i] ^= b;
+            break;
+          case 2: temp[j][i] ^= two[b];
+            break;
+          case 3: temp[j][i] ^= three[b];
+            break;
+          case 9: temp[j][i] ^= nine[b];
+            break;
+          case 11: temp[j][i] ^= eleven[b];
+            break;
+          case 13: temp[j][i] ^= thirteen[b];
+            break;
+          case 14: temp[j][i] ^= fourteen[b];
+            break;
+          default: Error("Error: Galois matrix is corrupt.");
+            break;
+        }
       }
     }
   }
-  for (uint8_t i = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j) {
+  // Store the result of the matrix multiplication in 'data'
+  for (uint8_t i = 0; i < DATA_DIMENSION; ++i) {
+    for (uint8_t j = 0; j < DATA_DIMENSION; ++j) {
       data[i][j] = temp[i][j];
     }
   }
 }
-void MyAES::InvMixColumns() {
-  byte temp[4][4] = {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}};
-  for (uint8_t i = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j) {
-      for (uint8_t k = 0; k < 4; ++k) {
-        uint8_t a = inv_galois_matrix[j][k];
-        byte b = data[k][i];
-        if (a == 9) temp[j][i] ^= nine[b];
-        if (a == 11) temp[j][i] ^= eleven[b];
-        if (a == 13) temp[j][i] ^= thirteen[b];
-        if (a == 14) temp[j][i] ^= fourteen[b];
-      }
-    }
-  }
-  for (uint8_t i = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j) {
-      data[i][j] = temp[i][j];
-    }
-  }
-}
-void MyAES::GenerateKeyHelper(byte in[], const uint8_t& i) {
+void MyAES::GenerateKeyCore(byte in[], const uint8_t& i) {
+  // Shift bytes to the left (rotate)
   ShiftLeft(in);
-  for (uint8_t a = 0; a < 4; ++a) {
+  // Apply S-table on all bytes
+  for (uint8_t a = 0; a < DATA_DIMENSION; ++a) {
     in[a] = s[in[a]];
   }
+  // XOR leftmost byte with RCON-table
   in[0] ^= rcon[i];
 }
 void MyAES::StoreData() {
+  // Check if there is any padding that we should omit
   CheckPadding();
-  for (uint8_t i = 0, k = 0; i < 4; ++i) {
-    for (uint8_t j = 0; j < 4; ++j, ++k) {
+  // Write contents of 'data' into our output file
+  for (uint8_t i = 0, k = 0; i < DATA_DIMENSION; ++i) {
+    for (uint8_t j = 0; j < DATA_DIMENSION; ++j, ++k) {
       if (k < data_size - pad_size) out_file << data[j][i];
     }
   }
 }
 void MyAES::CopyData(std::vector<byte>& v) {
-  for (uint8_t i = 0, k = 0; i < 4; ++i) { 
-    for (uint8_t j = 0; j < 4; ++j, ++k) {
+  // Copy all of the data stored in 'data' into 'v'
+  for (uint8_t i = 0, k = 0; i < DATA_DIMENSION; ++i) { 
+    for (uint8_t j = 0; j < DATA_DIMENSION; ++j, ++k) {
       v[k] = data[j][i];
     }
   }
 }
 void MyAES::XorData(const std::vector<byte>& v, const uint8_t& offset) {
-  for (uint8_t i = 0, k = 0; i < 4; ++i) { 
-    for (uint8_t j = 0; j < 4; ++j, ++k) {
+  // XOR the contents of 'data' with the first 16 items/bytes of 'v' starting
+  // at 'offset'. The first byte of 'data' will be XORed with the first byte
+  // of 'v' (taking into account 'offset'), the second byte of 'data' will be
+  // XORed with the second byte of 'v', and so on until we have XORed all 16
+  // bytes of 'data'.
+  for (uint8_t i = 0, k = 0; i < DATA_DIMENSION; ++i) { 
+    for (uint8_t j = 0; j < DATA_DIMENSION; ++j, ++k) {
       data[j][i] ^= v[k + offset];
     }
   }
 }
-void MyAES::KeySizeError() {
-  fprintf(stderr, "Error: the key file provided is not large to span a key \
-of %d-bits.\n", key_size);
+void MyAES::Error(const char* msg) {
+  // Something went wrong... :(
+  fprintf(stderr, "%s\n", msg);
   exit(-1);
 }
 
@@ -208,23 +218,23 @@ void MyAES::GenerateKeys() {
       expanded_keys[i] = x;
     }
     // Verify that we actually read all bytes of key.
-    if (i != n) KeySizeError();
+    if (i != n) Error(key_error_message);
   }
   // Generate expanded keys using the specified iterative process
-  for (uint16_t processed_bytes = n, it = 1; 
+  for (uint16_t processed_bytes = n, num_key = 1; 
        processed_bytes < expanded_keys.size(); processed_bytes += 4) {
     // Assign the value of the previous 4 bytes to 'temp'. We are
     // going to build the next 4 bytes of our expanded key in 'temp'.
     for (uint8_t i = 0; i < 4; ++i) {
       temp[i] = expanded_keys[processed_bytes + i - 4];
     }
-    // Every 'n' bytes (size each key) we want to re-
+    // Every 'n' bytes (size of each key) we want to re-
     // generate the core part of the next expanded key.
     if (processed_bytes % n == 0) {
-      GenerateKeyHelper(temp, it);
-      ++it;
+      GenerateKeyCore(temp, num_key);
+      ++num_key;
     }
-    // We need to use the fixed s-table for 256-bit keys to make a substitution
+    // For 256-bit keys, we need to make a substitution using S-lookup-table
     if (key_size == 256 && processed_bytes % n == (n >> 1)) {
       for (uint8_t i = 0; i < 4; ++i) {
         temp[i] = s[temp[i]];
@@ -240,7 +250,7 @@ void MyAES::GenerateKeys() {
 }
 void MyAES::Encrypt() {
   // Get the appropriate number of rounds needed depending on key size
-  uint8_t num_rounds = (key_size == 128) ? 10 : 14;
+  uint8_t total_rounds = (key_size == 128) ? 10 : 14;
   while (1) {
     // Get next 16 bytes of data from input file
     LoadData();
@@ -251,20 +261,20 @@ void MyAES::Encrypt() {
     if (cbc_mode) XorData(cbc_buffer);
     
     // Do iterative process to encrypt data:
-    uint8_t round = 0;
+    uint8_t num_round = 0;
     // Add/XOR Round Key:
-    XorData(expanded_keys, round*16);
-    for (++round; round < num_rounds; ++round) {
-      SubBytes();
+    XorData(expanded_keys, num_round*EXPANDED_KEY_SIZE);
+    for (++num_round; num_round < total_rounds; ++num_round) {
+      SubBytes(s);
       ShiftRows();
-      MixColumns();
+      MixColumns(galois_matrix);
       //Add/XOR Round Key:
-      XorData(expanded_keys, round*16);
+      XorData(expanded_keys, num_round*EXPANDED_KEY_SIZE);
     }
-    SubBytes();
+    SubBytes(s);
     ShiftRows();
     // Add/XOR Round Key:
-    XorData(expanded_keys, round*16);
+    XorData(expanded_keys, num_round*EXPANDED_KEY_SIZE);
 
     // Store encrypted data to output file
     StoreData();
@@ -281,7 +291,7 @@ void MyAES::Decrypt() {
     if (cbc_mode) std::copy(temp.begin(), temp.end(), 
                             cbc_buffer.begin());
     // Get the appropriate number of rounds needed depending on key size
-    uint8_t round = (key_size == 128) ? 10 : 14;
+    uint8_t num_round = (key_size == 128) ? 10 : 14;
     // Get next 16 bytes of data from input file
     LoadData();
     // Stop if no data was extracted (i.e. EOF)
@@ -291,18 +301,18 @@ void MyAES::Decrypt() {
 
     // Do the inverse of the iterative process to decrypt:
     // Add/XOR Round Key:
-    XorData(expanded_keys, (round--)*16);
+    XorData(expanded_keys, (num_round)*EXPANDED_KEY_SIZE);
     InvShiftRows();
-    InvSubBytes();
-    for (; round > 0; --round) {
+    SubBytes(inv_s);
+    for (--num_round; num_round > 0; --num_round) {
       // Add/XOR Round Key:
-      XorData(expanded_keys, round*16);
-      InvMixColumns();
+      XorData(expanded_keys, num_round*EXPANDED_KEY_SIZE);
+      MixColumns(inv_galois_matrix);
       InvShiftRows();
-      InvSubBytes();
+      SubBytes(inv_s);
     }
     // Add/XOR Round Key:
-    XorData(expanded_keys, round*16);
+    XorData(expanded_keys, num_round*EXPANDED_KEY_SIZE);
 
     // XOR the 16 bytes of decrypted data with whatever is in cbc_buffer
     if (cbc_mode) XorData(cbc_buffer);

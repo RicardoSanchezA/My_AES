@@ -4,6 +4,10 @@
 #include <fstream>
 #include <vector>
 
+#define DATA_SIZE 16
+#define DATA_DIMENSION 4
+#define EXPANDED_KEY_SIZE 16
+
 typedef uint8_t byte;
 
 class MyAES {
@@ -27,20 +31,18 @@ class MyAES {
   void CheckPadding();
   void LoadInitVector();
   void LoadData();
-  void SubBytes();
-  void InvSubBytes();
-  void ShiftLeft(byte *in);
+  void SubBytes(const uint8_t* table);
+  void ShiftLeft(byte* in);
   void ShiftRows();
   void InvShiftRows();
-  void MixColumns();
-  void InvMixColumns();
+  void MixColumns(const uint8_t (&matrix)[DATA_DIMENSION][DATA_DIMENSION]);
   void StoreData();
-  void GenerateKeyHelper(byte* in, const uint8_t& i);
+  void GenerateKeyCore(byte* in, const uint8_t& i);
   void CopyData(std::vector<byte>& v);
   void XorData(const std::vector<byte>& v, const uint8_t& offset = 0);
-  void KeySizeError();
+  void Error(const char* msg);
   // Private Data
-  byte data[4][4];
+  byte data[DATA_DIMENSION][DATA_DIMENSION];
   std::vector<byte> expanded_keys;
   std::vector<byte> cbc_buffer;
   uint16_t key_size;

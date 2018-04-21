@@ -6,11 +6,11 @@ g++ -std=c++11 run_my_aes.c++ my_aes.c++ -o run_my_aes
 ### Usage:
   (Encryption)
 ```
-./run_my_aes -s 128 -k key.txt -i input.txt -o cipher.txt
+./run_my_aes -s 128 -k key -i input -o cipher
 ```
   (Decryption)
 ```
-./run_my_aes -s 128 -k key.txt -i cipher.txt -o output.txt -m decrypt
+./run_my_aes -s 128 -k key -i cipher -o output -m decrypt
 ```
     
   (Print Help Menu)
